@@ -2996,6 +2996,9 @@
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_gui_extra.cpp"/>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\AudioPlayer.h"/>
+    <ClInclude Include="..\..\Source\Oscillator.h"/>
+    <ClInclude Include="..\..\Source\Effect.h"/>
     <ClInclude Include="..\..\Source\AudioDeviceManager.h"/>
     <ClInclude Include="..\..\Source\AudioLab.h"/>
     <ClInclude Include="..\..\Source\DemoUtilities.h"/>

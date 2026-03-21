@@ -3729,6 +3729,15 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\AudioPlayer.h">
+      <Filter>AudioLab\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Oscillator.h">
+      <Filter>AudioLab\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Effect.h">
+      <Filter>AudioLab\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Source\AudioDeviceManager.h">
       <Filter>AudioLab\Source</Filter>
     </ClInclude>

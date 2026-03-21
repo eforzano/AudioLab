@@ -6,6 +6,9 @@
               id="xkyPTB" jucerFormatVersion="1">
   <MAINGROUP id="Fs56nt" name="AudioLab">
     <GROUP id="{BFDC3D6D-FBD4-C7D0-7B63-DE7E7D7B8EB2}" name="Source">
+      <FILE id="twIPUo" name="AudioPlayer.h" compile="0" resource="0" file="Source/AudioPlayer.h"/>
+      <FILE id="QbHfEt" name="Oscillator.h" compile="0" resource="0" file="Source/Oscillator.h"/>
+      <FILE id="BmVfnD" name="Effect.h" compile="0" resource="0" file="Source/Effect.h"/>
       <FILE id="HGgW2F" name="AudioDeviceManager.h" compile="0" resource="0"
             file="Source/AudioDeviceManager.h"/>
       <FILE id="J7hPl5" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>

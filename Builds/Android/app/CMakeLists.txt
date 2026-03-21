@@ -36,6 +36,9 @@ add_library( ${BINARY_NAME}
 
     SHARED
 
+    "../../../Source/AudioPlayer.h"
+    "../../../Source/Oscillator.h"
+    "../../../Source/Effect.h"
     "../../../Source/AudioDeviceManager.h"
     "../../../Source/Main.cpp"
     "../../../Source/AudioLab.h"
@@ -2458,6 +2461,9 @@ add_library( ${BINARY_NAME}
 )
 
 set_source_files_properties(
+    "../../../Source/AudioPlayer.h"
+    "../../../Source/Oscillator.h"
+    "../../../Source/Effect.h"
     "../../../Source/AudioDeviceManager.h"
     "../../../Source/AudioLab.h"
     "../../../Source/DemoUtilities.h"
