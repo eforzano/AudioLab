@@ -17,44 +17,19 @@
   ==============================================================================
 */
 
-/*******************************************************************************
- The block below describes the properties of this PIP. A PIP is a short snippet
- of code that can be read by the Projucer and used to generate a JUCE project.
-
- BEGIN_JUCE_PIP_METADATA
-
- name:             AudioDeviceManager
- version:          1.0.0
- vendor:           JUCE
- website:          http://juce.com
- description:      Explores features of the audio device manager.
-
- dependencies:     juce_audio_basics, juce_audio_devices, juce_audio_formats,
-                   juce_audio_processors, juce_audio_utils, juce_core,
-                   juce_data_structures, juce_events, juce_graphics,
-                   juce_gui_basics, juce_gui_extra
- exporters:        xcode_mac, vs2019, linux_make, xcode_iphone, androidstudio
-
- type:             Component
- mainClass:        AudioManagerContentComponent
-
- useLocalCopy:     1
-
- END_JUCE_PIP_METADATA
-
-*******************************************************************************/
-
-
 #pragma once
 
 #include <JuceHeader.h>
 
 //==============================================================================
-class AudioManagerContentComponent   : public juce::AudioAppComponent,
-                               public juce::ChangeListener,
-                               private juce::Timer
+class AudioManagerContentComponent : public juce::Component,         // was AudioAppComponent
+                                     public juce::ChangeListener,
+                                     private juce::Timer
 {
 public:
+    // Owned here — shared with AudioEngine and AudioLabComponent via reference
+    juce::AudioDeviceManager deviceManager;
+
     //==============================================================================
     AudioManagerContentComponent()
         : audioSetupComp (deviceManager,
@@ -87,7 +62,17 @@ public:
 
         setSize (760, 360);
 
-        setAudioChannels (2, 2);
+        // Initialise the device manager with default settings (no audio callback registered here)
+        deviceManager.initialise (2, 2, nullptr, true);
+
+        // Then explicitly set up an input-enabled device config:
+        AudioDeviceManager::AudioDeviceSetup setup;
+        deviceManager.getAudioDeviceSetup (setup);
+        setup.inputChannels.setRange (0, 2, true);
+        setup.outputChannels.setRange (0, 2, true);
+        setup.useDefaultInputChannels  = false;
+        setup.useDefaultOutputChannels = false;
+        deviceManager.setAudioDeviceSetup (setup, true);
         deviceManager.addChangeListener (this);
 
         startTimer (50);
@@ -96,49 +81,10 @@ public:
     ~AudioManagerContentComponent() override
     {
         deviceManager.removeChangeListener (this);
-        shutdownAudio();
+        // No shutdownAudio() — we don't own an audio callback
     }
 
-    void prepareToPlay (int, double) override {}
-
-    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override
-    {
-        auto* device = deviceManager.getCurrentAudioDevice();
-
-        auto activeInputChannels  = device->getActiveInputChannels();
-        auto activeOutputChannels = device->getActiveOutputChannels();
-
-        auto maxInputChannels  = activeInputChannels.countNumberOfSetBits();
-        auto maxOutputChannels = activeOutputChannels.countNumberOfSetBits();
-
-        for (auto channel = 0; channel < maxOutputChannels; ++channel)
-        {
-            if ((! activeOutputChannels[channel]) || maxInputChannels == 0)
-            {
-                bufferToFill.buffer->clear (channel, bufferToFill.startSample, bufferToFill.numSamples);
-            }
-            else
-            {
-                auto actualInputChannel = channel % maxInputChannels;
-
-                if (! activeInputChannels[channel])
-                {
-                    bufferToFill.buffer->clear (channel, bufferToFill.startSample, bufferToFill.numSamples);
-                }
-                else
-                {
-                    auto* inBuffer  = bufferToFill.buffer->getReadPointer  (actualInputChannel,
-                                                                            bufferToFill.startSample);
-                    auto* outBuffer = bufferToFill.buffer->getWritePointer (channel, bufferToFill.startSample);
-
-                    for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
-                        outBuffer[sample] = inBuffer[sample] * random.nextFloat() * 0.25f;
-                }
-            }
-        }
-    }
-
-    void releaseResources() override {}
+    // prepareToPlay / getNextAudioBlock / releaseResources removed entirely
 
     void paint (juce::Graphics& g) override
     {
@@ -215,7 +161,6 @@ private:
     }
 
     //==========================================================================
-    juce::Random random;
     juce::AudioDeviceSelectorComponent audioSetupComp;
     juce::Label cpuUsageLabel;
     juce::Label cpuUsageText;

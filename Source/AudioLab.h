@@ -51,6 +51,7 @@
 *******************************************************************************/
 
 #pragma once
+#include <string>
 
 #include "DemoUtilities.h"
 #include "AudioDeviceManager.h"
@@ -59,6 +60,7 @@
 #include "AudioPlayer.h"
 #include "DSPDemos_Common.h"
 using namespace dsp;
+using namespace std;
 
 //==============================================================================
 /**
@@ -195,50 +197,74 @@ public:
     }
     
     //==============================================================================
-    class AudioEngine : public juce::AudioAppComponent
+    class AudioEngine : public juce::AudioIODeviceCallback
     {
     public:
-        AudioEngine (AudioPlayerComponent& af, OscillatorComponent& osc, EffectComponent& fx)
-            : audioFile(af), oscillator (osc), effect (fx)
+        AudioEngine (AudioDeviceManager& adm,
+                     AudioPlayerComponent& af,
+                     OscillatorComponent& osc,
+                     EffectComponent& fx)
+            : deviceManager (adm), audioFile (af), oscillator (osc), effect (fx)
         {
-            setAudioChannels (0, 2);
+            deviceManager.addAudioCallback (this);  // register on the SHARED manager
         }
 
         ~AudioEngine() override
         {
-            shutdownAudio();
+            deviceManager.removeAudioCallback (this);  // clean up
         }
 
-        void prepareToPlay (int samplesPerBlock, double sampleRate) override
+        void audioDeviceAboutToStart (AudioIODevice* device) override
         {
-            ProcessSpec spec { sampleRate, (uint32) samplesPerBlock, 2 };
+            double sampleRate = device->getCurrentSampleRate();
+            int blockSize     = device->getCurrentBufferSizeSamples();
+            ProcessSpec spec { sampleRate, (uint32) blockSize, 2 };
             audioFile.prepare (spec);
             oscillator.prepare (spec);
             effect.prepare (spec);
         }
-
-        void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override
+        
+       
+        void audioDeviceIOCallbackWithContext (const float* const* inputChannelData,
+                                              int numInputChannels,
+                                              float* const* outputChannelData,
+                                              int numOutputChannels,
+                                              int numSamples,
+                                              const AudioIODeviceCallbackContext&) override
         {
-            bufferToFill.clearActiveBufferRegion();
-            AudioBlock<float> block (*bufferToFill.buffer, bufferToFill.startSample);
+
+            AudioBuffer<float> buffer (outputChannelData, numOutputChannels, numSamples);
+
+            for (int ch = 0; ch < numOutputChannels; ++ch)
+            {
+                auto* in  = (ch < numInputChannels) ? inputChannelData[ch] : nullptr;
+                auto* out = outputChannelData[ch];
+
+                if (in != nullptr)
+                    FloatVectorOperations::copy (out, in, numSamples);
+                else
+                    FloatVectorOperations::clear (out, numSamples);
+            }
+            
+            AudioBlock<float> block (buffer);
             ProcessContextReplacing<float> context (block);
             audioFile.process (context);
             oscillator.process (context);
             effect.process (context);
         }
 
-        void releaseResources() override
+        void audioDeviceStopped() override
         {
             oscillator.reset();
             effect.reset();
         }
 
     private:
+        AudioDeviceManager& deviceManager;
         AudioPlayerComponent& audioFile;
-        OscillatorComponent& oscillator;
-        EffectComponent&     effect;
+        OscillatorComponent&  oscillator;
+        EffectComponent&      effect;
     };
-
     //==============================================================================
     Label descriptionLabel { {}, "Audio" };
 
@@ -328,6 +354,7 @@ private:
     
     AudioLabComponent audioLabComponent { audioManagerContentComponent.deviceManager };
     AudioLabComponent::AudioEngine audioEngine {
+                                            audioManagerContentComponent.deviceManager,
                                             audioLabComponent.audioFileComponent,
                                             audioLabComponent.oscillatorComponent,
                                             audioLabComponent.effectComponent };

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="AudioLab" companyName="JUCE" version="1.0.0" userNotes="Simple UI demonstrating accessibility features on supported platforms."
-              companyWebsite="http://juce.com" defines="PIP_JUCE_EXAMPLES_DIRECTORY=L1VzZXJzL2VybmVzdGZvcnphbm8vRGVza3RvcC9KVUNFL2V4YW1wbGVz"
+<JUCERPROJECT name="AudioLab" companyName="Tuesday Night Instruments" version="1.0.0"
+              userNotes="Simple UI demonstrating accessibility features on supported platforms."
+              defines="PIP_JUCE_EXAMPLES_DIRECTORY=L1VzZXJzL2VybmVzdGZvcnphbm8vRGVza3RvcC9KVUNFL2V4YW1wbGVz"
               projectType="guiapp" useAppConfig="0" addUsingNamespaceToJuceHeader="1"
               id="xkyPTB" jucerFormatVersion="1">
   <MAINGROUP id="Fs56nt" name="AudioLab">
@@ -18,6 +19,10 @@
       <FILE id="mU97kw" name="DemoUtilities.h" compile="0" resource="0" file="Source/DemoUtilities.h"/>
       <FILE id="x57OCO" name="DSPDemos_Common.h" compile="0" resource="0"
             file="Source/DSPDemos_Common.h"/>
+      <FILE id="QHQhMX" name="icons8-audio-64.png" compile="0" resource="1"
+            file="Assets/icons8-audio-64.png"/>
+      <FILE id="GCyOsM" name="icons8-audio-96.png" compile="0" resource="1"
+            file="Assets/icons8-audio-96.png"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -37,10 +42,11 @@
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
   </MODULES>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX">
+    <XCODE_MAC targetFolder="Builds/MacOSX" customPList="&lt;key&gt;NSMicrophoneUsageDescription&lt;/key&gt;&#10;&lt;string&gt;AudioLab needs microphone access for audio input.&lt;/string&gt;"
+               microphonePermissionNeeded="1" smallIcon="QHQhMX" bigIcon="GCyOsM">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AccessibilityDemo"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AccessibilityDemo"/>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path=""/>
@@ -58,10 +64,11 @@
         <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
-    <VS2022 targetFolder="Builds/VisualStudio2022" extraCompilerFlags="/bigobj">
+    <VS2022 targetFolder="Builds/VisualStudio2022" extraCompilerFlags="/bigobj"
+            bigIcon="GCyOsM" smallIcon="QHQhMX">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AccessibilityDemo"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AccessibilityDemo"/>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path=""/>
@@ -79,10 +86,11 @@
         <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
-    <VS2026 targetFolder="Builds/VisualStudio2026" extraCompilerFlags="/bigobj">
+    <VS2026 targetFolder="Builds/VisualStudio2026" extraCompilerFlags="/bigobj"
+            bigIcon="GCyOsM" smallIcon="QHQhMX">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AccessibilityDemo"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AccessibilityDemo"/>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path=""/>
@@ -104,8 +112,8 @@
                    androidBluetoothScanNeeded="1" androidBluetoothAdvertiseNeeded="1"
                    androidBluetoothConnectNeeded="1">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AccessibilityDemo"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AccessibilityDemo"/>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path=""/>
@@ -125,8 +133,8 @@
     </ANDROIDSTUDIO>
     <XCODE_IPHONE targetFolder="Builds/iOS" customXcodeResourceFolders="/Users/ernestforzano/Desktop/JUCE/examples/Assets">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AccessibilityDemo"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AccessibilityDemo"/>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path=""/>

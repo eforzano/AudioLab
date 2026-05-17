@@ -100,7 +100,22 @@ public:
 
     void process (const ProcessContextReplacing<float>& context)
     {
-        // process audio here (currently a no-op pass-through)
+        auto& inputBlock = context.getInputBlock();
+        auto& outputBlock = context.getOutputBlock();
+        auto numSamples = outputBlock.getNumSamples();
+        auto numChannels = outputBlock.getNumChannels();
+        jassert (inputBlock.getNumSamples() == numSamples);
+        jassert (inputBlock.getNumChannels() == numChannels);
+        for (size_t ch = 0; ch < numChannels; ++ch)
+        {
+            auto* input = inputBlock.getChannelPointer (ch);
+            auto* output = outputBlock.getChannelPointer (ch);
+            for (size_t i = 0; i < numSamples; ++i)
+            {
+                auto inputSample = input[i];
+                output[i] = inputSample;
+            }
+        }
     }
 
     void reset() {
@@ -110,12 +125,18 @@ public:
     void updateParameters()
     {
         // read from param objects and apply to DSP
+        for (uint8_t i=0; i < NUM_ROTARY_KNOBS; i++)
+        {
+            values[i] = static_cast<float> (rotarySliders[i].getValue());
+        }
+
     }
 
 private:
     std::array<Slider, NUM_ROTARY_KNOBS> rotarySliders;
     std::array<juce::Label, NUM_ROTARY_KNOBS> rotarySliderLabels;
     std::array<juce::String, NUM_ROTARY_KNOBS> rotarySliderStrings = {"CTRL1","CTRL2","CTRL3","CTRL4","CTRL5","CTRL6"};
+    float values[NUM_ROTARY_KNOBS];
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EffectComponent)
