@@ -21,7 +21,7 @@ cmake --build build --config Release
 
 ## Windows
 ```
-bashcmake -B build -G "Visual Studio 17 2022"
+cmake -B build -G "Visual Studio 17 2022"
 cmake --build build --config Release
 ```
 
