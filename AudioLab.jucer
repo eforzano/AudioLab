@@ -19,10 +19,6 @@
       <FILE id="mU97kw" name="DemoUtilities.h" compile="0" resource="0" file="Source/DemoUtilities.h"/>
       <FILE id="x57OCO" name="DSPDemos_Common.h" compile="0" resource="0"
             file="Source/DSPDemos_Common.h"/>
-      <FILE id="QHQhMX" name="icons8-audio-64.png" compile="0" resource="1"
-            file="Assets/icons8-audio-64.png"/>
-      <FILE id="GCyOsM" name="icons8-audio-96.png" compile="0" resource="1"
-            file="Assets/icons8-audio-96.png"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -43,7 +39,7 @@
   </MODULES>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" customPList="&lt;key&gt;NSMicrophoneUsageDescription&lt;/key&gt;&#10;&lt;string&gt;AudioLab needs microphone access for audio input.&lt;/string&gt;"
-               microphonePermissionNeeded="1" smallIcon="QHQhMX" bigIcon="GCyOsM">
+               microphonePermissionNeeded="1" smallIcon="" bigIcon="">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
         <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
@@ -65,7 +61,7 @@
       </MODULEPATHS>
     </XCODE_MAC>
     <VS2022 targetFolder="Builds/VisualStudio2022" extraCompilerFlags="/bigobj"
-            bigIcon="GCyOsM" smallIcon="QHQhMX">
+            bigIcon="" smallIcon="">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
         <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
@@ -87,7 +83,7 @@
       </MODULEPATHS>
     </VS2022>
     <VS2026 targetFolder="Builds/VisualStudio2026" extraCompilerFlags="/bigobj"
-            bigIcon="GCyOsM" smallIcon="QHQhMX">
+            bigIcon="" smallIcon="">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
         <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>

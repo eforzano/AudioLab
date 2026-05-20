@@ -37,7 +37,8 @@ public:
 
 
         for (uint8_t i =0; i<NUM_ROTARY_KNOBS; i++)
-            setUpSlider (rotarySliders[i], Slider::Rotary, rotarySliderLabels[i], rotarySliderStrings[i],  0.0, 1.0, 0.001, 0.5);
+            setUpSlider (rotarySliders[i], Slider::Rotary, rotarySliderLabels[i], rotarySliderStrings[i],
+                         default_values[i][0], default_values[i][1], default_values[i][2], default_values[i][3]);
         
         startTimerHz (30); // call timerCallback 30 times per second
     }
@@ -96,6 +97,8 @@ public:
     void prepare (const ProcessSpec& spec)
     {
         // initialize your effect here
+        delay_ptr = 0;
+        delay_okay = false;
     }
 
     void process (const ProcessContextReplacing<float>& context)
@@ -113,6 +116,7 @@ public:
             for (size_t i = 0; i < numSamples; ++i)
             {
                 auto inputSample = input[i];
+            
                 output[i] = inputSample;
             }
         }
@@ -137,6 +141,15 @@ private:
     std::array<juce::Label, NUM_ROTARY_KNOBS> rotarySliderLabels;
     std::array<juce::String, NUM_ROTARY_KNOBS> rotarySliderStrings = {"CTRL1","CTRL2","CTRL3","CTRL4","CTRL5","CTRL6"};
     float values[NUM_ROTARY_KNOBS];
+    float default_values[NUM_ROTARY_KNOBS][4] = {
+        {0.0, 1.0, 0.001, 0.5},
+        {0.0, 1.0, 0.001, 0.5},
+        {0.0, 1.0, 0.001, 0.5},
+        {0.0, 1.0, 0.001, 0.5},
+        {0.0, 1.0, 0.001, 0.5},
+        {0.0, 1.0, 0.001, 0.5}
+    };
+
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EffectComponent)
