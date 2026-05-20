@@ -97,8 +97,6 @@ public:
     void prepare (const ProcessSpec& spec)
     {
         // initialize your effect here
-        delay_ptr = 0;
-        delay_okay = false;
     }
 
     void process (const ProcessContextReplacing<float>& context)
