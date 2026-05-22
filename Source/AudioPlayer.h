@@ -203,6 +203,8 @@ public:
 
         parametersComponent.reset();
     }
+    
+    bool enabled() { return playState.getValue();}
 
     void play()
     {
@@ -224,6 +226,7 @@ public:
     }
 
     AudioThumbnailComponent& getThumbnailComponent()    { return header.thumbnailComp; }
+    
 
 private:
     //==============================================================================

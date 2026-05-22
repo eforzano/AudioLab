@@ -18,6 +18,8 @@ class EffectComponent final : public Component,
 {
 public:
     EffectComponent()
+    :forwardFFT (fftOrder),
+     window(fftSize, juce::dsp::WindowingFunction<float>::hann)
     {
         auto setUpSlider = [this] (Slider& slider, Slider::SliderStyle style,
                     Label& label, const juce::String& name,
@@ -93,6 +95,7 @@ public:
                 
         grid.performLayout (getLocalBounds());
     }
+    
 
     void prepare (const ProcessSpec& spec)
     {
@@ -114,14 +117,60 @@ public:
             for (size_t i = 0; i < numSamples; ++i)
             {
                 auto inputSample = input[i];
-            
+                pushNextSampleIntoFifo(inputSample);
                 output[i] = inputSample;
             }
+        }
+        processFFT();
+    }
+    
+    void processFFT()
+    {
+        if (nextFFTBlockReady)
+        {
+            // Window Data
+            window.multiplyWithWindowingTable (fftData.data(), fftSize);
+            // Then FFT
+            forwardFFT.performFrequencyOnlyForwardTransform (fftData.data());
+            // Skip 0 because thats 0Hz
+            for (uint16_t i=1; i<fftSize/2; ++i)
+            {
+                binMagnitudes.push_back({ getFrequencyFromBin(i), fftData[i]});
+            }
+            
+            std::sort(binMagnitudes.begin(), binMagnitudes.end(),
+                [](const auto& a, const auto& b) { return a.second > b.second; });
+
+            nextFFTBlockReady = false;
         }
     }
 
     void reset() {
         
+    }
+    
+    uint16_t getFrequencyFromBin(uint16_t binIndex)
+    {
+        // Get SampleRate
+        return (binIndex * 48000)/fftSize;
+    }
+
+    void pushNextSampleIntoFifo(float sample) noexcept
+    {
+        // if fifo contains enough data set a flag
+        if (fifoIndex == fftSize)
+        {
+
+            //DBG("FFT Max Level " + juce::String(maxLevel));
+            if (!nextFFTBlockReady)
+            {
+                std::fill(fftData.begin(), fftData.end(), 0.0f);
+                std::copy(fifo.begin(), fifo.end(), fftData.begin());
+                nextFFTBlockReady = true;
+            }
+            fifoIndex = 0;
+        }
+        fifo[(size_t) fifoIndex++] = sample;
     }
 
     void updateParameters()
@@ -147,7 +196,17 @@ private:
         {0.0, 1.0, 0.001, 0.5},
         {0.0, 1.0, 0.001, 0.5}
     };
-
+    
+    // Effect
+    static constexpr auto fftOrder = 10;
+    static constexpr auto fftSize = 1 << fftOrder;
+    juce::dsp::FFT forwardFFT;
+    std::array<float, fftSize> fifo;
+    std::array<float, fftSize * 2> fftData;
+    int fifoIndex;
+    bool nextFFTBlockReady = false;
+    std::vector<std::pair<uint16_t, float>> binMagnitudes;
+    juce::dsp::WindowingFunction<float> window;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EffectComponent)

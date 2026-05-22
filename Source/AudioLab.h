@@ -248,8 +248,11 @@ public:
             
             AudioBlock<float> block (buffer);
             ProcessContextReplacing<float> context (block);
-            audioFile.process (context);
-            oscillator.process (context);
+            // TODO: Add boolean check
+//            if (audioFile.enabled())
+//                audioFile.process (context);
+            if (oscillator.oscEnabled)
+                oscillator.process (context);
             effect.process (context);
         }
 

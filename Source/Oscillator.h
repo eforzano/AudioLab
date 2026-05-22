@@ -204,6 +204,7 @@ public:
     };
 
     // Audio files
+    bool oscEnabled;
     HeapBlock<char> audioBufferMemory;
     AudioBlock<float> audioBuffer;
     double fileMix = 0.0f;
@@ -213,7 +214,7 @@ public:
     BrownNoise brown;
 
 private:
-    bool oscEnabled;
+
     int currentOscillatorIdx = 0;
     Gain<float> gain;
 

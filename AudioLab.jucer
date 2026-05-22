@@ -18,7 +18,6 @@
     <GROUP id="ZAkim0" name="Assets">
       <FILE id="mU97kw" name="DemoUtilities.h" compile="0" resource="0" file="Source/DemoUtilities.h"/>
       <FILE id="x57OCO" name="DSPDemos_Common.h" compile="0" resource="0"
-
             file="Source/DSPDemos_Common.h"/>
     </GROUP>
   </MAINGROUP>
@@ -105,9 +104,8 @@
         <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
       </MODULEPATHS>
     </VS2026>
-    <ANDROIDSTUDIO targetFolder="Builds/Android" androidExtraAssetsFolder="/Users/ernestforzano/Desktop/JUCE/examples/Assets"
-                   androidBluetoothScanNeeded="1" androidBluetoothAdvertiseNeeded="1"
-                   androidBluetoothConnectNeeded="1">
+    <ANDROIDSTUDIO targetFolder="Builds/Android" androidBluetoothScanNeeded="1"
+                   androidBluetoothAdvertiseNeeded="1" androidBluetoothConnectNeeded="1">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
         <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
