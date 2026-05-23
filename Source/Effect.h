@@ -3,7 +3,10 @@
 #include "DemoUtilities.h"
 #include "AudioDeviceManager.h"
 #include "DSPDemos_Common.h"
+#include <juce_core/juce_core.h>
+
 using namespace dsp;
+using namespace std;
 
 //==============================================================================
 /**
@@ -43,17 +46,35 @@ public:
                          default_values[i][0], default_values[i][1], default_values[i][2], default_values[i][3]);
         
         startTimerHz (30); // call timerCallback 30 times per second
+        
     }
 
     ~EffectComponent()
     {
         stopTimer();
+        myFFTThread.signalThreadShouldExit();
+        myFFTThread.waitForThreadToExit(4000);
     }
 
     // Called 30x/sec on the message thread — safe to read Sliders here
     void timerCallback() override
     {
         updateParameters();
+        juce::ScopedLock sl(binMagnitudesLock);
+
+        int actualTopN = juce::jmin(topN, (int)binMagnitudes.size());
+        DBG("New:");
+        for (uint8_t i = 0; i < actualTopN; i++)
+        {
+            float freq = binMagnitudes[i].first;
+            float mag  = binMagnitudes[i].second;
+            
+            DBG("[" + juce::String(i) + "] "
+                + "Freq: "  + juce::String(freq, 1) + " Hz  "  // 1 decimal place
+                + "Mag: "   + juce::String(mag,  4));
+            
+        }
+        
     }
 
     
@@ -94,12 +115,17 @@ public:
         grid.items.add (GridItem (rotarySliders[5]).withMargin ({ 1 }));
                 
         grid.performLayout (getLocalBounds());
+        
     }
     
 
     void prepare (const ProcessSpec& spec)
     {
-        // initialize your effect here
+        sampleRate = (float)spec.sampleRate;
+        if (!myFFTThread.isThreadRunning())
+            myFFTThread.startThread();
+
+
     }
 
     void process (const ProcessContextReplacing<float>& context)
@@ -110,6 +136,8 @@ public:
         auto numChannels = outputBlock.getNumChannels();
         jassert (inputBlock.getNumSamples() == numSamples);
         jassert (inputBlock.getNumChannels() == numChannels);
+        
+
         for (size_t ch = 0; ch < numChannels; ++ch)
         {
             auto* input = inputBlock.getChannelPointer (ch);
@@ -121,29 +149,8 @@ public:
                 output[i] = inputSample;
             }
         }
-        processFFT();
     }
     
-    void processFFT()
-    {
-        if (nextFFTBlockReady)
-        {
-            // Window Data
-            window.multiplyWithWindowingTable (fftData.data(), fftSize);
-            // Then FFT
-            forwardFFT.performFrequencyOnlyForwardTransform (fftData.data());
-            // Skip 0 because thats 0Hz
-            for (uint16_t i=1; i<fftSize/2; ++i)
-            {
-                binMagnitudes.push_back({ getFrequencyFromBin(i), fftData[i]});
-            }
-            
-            std::sort(binMagnitudes.begin(), binMagnitudes.end(),
-                [](const auto& a, const auto& b) { return a.second > b.second; });
-
-            nextFFTBlockReady = false;
-        }
-    }
 
     void reset() {
         
@@ -152,7 +159,7 @@ public:
     uint16_t getFrequencyFromBin(uint16_t binIndex)
     {
         // Get SampleRate
-        return (binIndex * 48000)/fftSize;
+        return (binIndex * sampleRate)/fftSize;
     }
 
     void pushNextSampleIntoFifo(float sample) noexcept
@@ -182,6 +189,84 @@ public:
         }
 
     }
+    
+    class fftThread: public juce::Thread
+    {
+        public:
+            fftThread(EffectComponent& owner): Thread("FFT Thread"), owner(owner){}
+            
+            void run() override
+            {
+                while (!threadShouldExit())
+                {
+                    if (owner.nextFFTBlockReady)
+                    {
+
+                        // Window Data
+                        owner.window.multiplyWithWindowingTable (owner.fftData.data(), owner.fftSize);
+                        // Then FFT
+                        owner.forwardFFT.performFrequencyOnlyForwardTransform (owner.fftData.data());
+                        
+
+                        
+                        std::vector<std::pair<uint16_t, float>> newBinMagnitudes;
+                        // Skip 0 because thats 0Hz
+                        for (uint16_t i=0; i<fftSize/2; ++i)
+                        {
+                            float magnitude = owner.fftData[i];
+                            // Threshold to skip noise
+                            if (magnitude < 0.1f)
+                                continue;
+                            newBinMagnitudes.push_back({ owner.getFrequencyFromBin(i), magnitude});
+                        }
+
+                        if (!newBinMagnitudes.empty())
+                        {
+                            
+                            int actualTopN = juce::jmin(owner.topN, (int)newBinMagnitudes.size());
+                            // Partial sort — only sorts enough to get top N, O(n log k)
+                            std::partial_sort(newBinMagnitudes.begin(),
+                                              newBinMagnitudes.begin() + actualTopN,
+                                              newBinMagnitudes.end(),
+                                              [](const std::pair<uint16_t, float>& a, const std::pair<uint16_t, float>& b)
+                                              {
+                                return a.second > b.second;
+                            });
+                            
+                        }
+                        juce::ScopedLock sl(owner.binMagnitudesLock);
+                        owner.binMagnitudes = std::move(newBinMagnitudes);
+             
+                        owner.nextFFTBlockReady = false;
+               
+                            
+                    }
+                    wait(10);
+                }
+            }
+
+        private:
+            EffectComponent& owner;
+
+    };
+
+
+public:
+    // Effect
+    int topN = 4;
+    static constexpr auto fftOrder = 11;
+    static constexpr auto fftSize = 1 << fftOrder;
+    juce::dsp::FFT forwardFFT;
+    std::array<float, fftSize> fifo;
+    std::array<float, fftSize * 2> fftData;
+    int fifoIndex = 0;
+    float sampleRate = 48000;
+    std::atomic<bool> nextFFTBlockReady = {false};
+    std::vector<std::pair<uint16_t, float>> binMagnitudes;
+    juce::dsp::WindowingFunction<float> window;
+    juce::CriticalSection binMagnitudesLock;
+    fftThread myFFTThread { *this };
+    
 
 private:
     std::array<Slider, NUM_ROTARY_KNOBS> rotarySliders;
@@ -197,16 +282,6 @@ private:
         {0.0, 1.0, 0.001, 0.5}
     };
     
-    // Effect
-    static constexpr auto fftOrder = 10;
-    static constexpr auto fftSize = 1 << fftOrder;
-    juce::dsp::FFT forwardFFT;
-    std::array<float, fftSize> fifo;
-    std::array<float, fftSize * 2> fftData;
-    int fifoIndex;
-    bool nextFFTBlockReady = false;
-    std::vector<std::pair<uint16_t, float>> binMagnitudes;
-    juce::dsp::WindowingFunction<float> window;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EffectComponent)
