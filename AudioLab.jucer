@@ -4,7 +4,8 @@
               userNotes="Simple UI demonstrating accessibility features on supported platforms."
               defines="PIP_JUCE_EXAMPLES_DIRECTORY=L1VzZXJzL2VybmVzdGZvcnphbm8vRGVza3RvcC9KVUNFL2V4YW1wbGVz"
               projectType="guiapp" useAppConfig="0" addUsingNamespaceToJuceHeader="1"
-              id="xkyPTB" jucerFormatVersion="1">
+              id="xkyPTB" jucerFormatVersion="1" pluginCharacteristicsValue="pluginIsMidiEffectPlugin,pluginIsSynth,pluginProducesMidiOut,pluginWantsMidiIn"
+              pluginFormats="buildVST3">
   <MAINGROUP id="Fs56nt" name="AudioLab">
     <GROUP id="{BFDC3D6D-FBD4-C7D0-7B63-DE7E7D7B8EB2}" name="Source">
       <FILE id="twIPUo" name="AudioPlayer.h" compile="0" resource="0" file="Source/AudioPlayer.h"/>
@@ -39,7 +40,7 @@
   </MODULES>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" customPList="&lt;key&gt;NSMicrophoneUsageDescription&lt;/key&gt;&#10;&lt;string&gt;AudioLab needs microphone access for audio input.&lt;/string&gt;"
-               microphonePermissionNeeded="1" smallIcon="" bigIcon="">
+               microphonePermissionNeeded="1" smallIcon="" bigIcon="" iosBluetoothPermissionNeeded="1">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
         <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>

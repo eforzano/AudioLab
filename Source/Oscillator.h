@@ -161,6 +161,12 @@ public:
         }
 
     }
+    
+    void setFrequency(float freq)
+    {
+        for (auto&& oscillator : oscillators)
+            oscillator.setFrequency (freq);
+    }
 
     void reset()
     {
@@ -174,9 +180,9 @@ public:
                                         (typeBox.getSelectedItemIndex()) );
 
         auto freq = static_cast<float> (freqSlider.getValue());
-
+        
         for (auto&& oscillator : oscillators)
-            oscillator.setFrequency (freq);
+            oscillator.setFrequency (freq);            
 
         gain.setGainDecibels (static_cast<float> (gainSlider.getValue()));
 
@@ -199,8 +205,6 @@ public:
         {[this] (float x) { return whiteNoise();}},                // white
         {[this] (float x) { return pink.process();}},              // pink
         {[this] (float x) { return brown.process(aggression);}},   // brown
-
-
     };
 
     // Audio files

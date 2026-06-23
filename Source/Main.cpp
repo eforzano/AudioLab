@@ -6,6 +6,7 @@
   ==============================================================================
 */
 
+#if JUCE_STANDALONE_APPLICATION
 #include <JuceHeader.h>
 #include "AudioLab.h"
 
@@ -94,3 +95,4 @@ private:
 
 //==============================================================================
 START_JUCE_APPLICATION (Application)
+#endif

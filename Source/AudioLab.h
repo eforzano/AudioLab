@@ -62,6 +62,57 @@
 using namespace dsp;
 using namespace std;
 
+class ExternalAudioComponent final : public Component
+{
+public:
+    ExternalAudioComponent()
+    {
+        enableToggle.setToggleState (true, dontSendNotification);
+        enableToggle.setClickingTogglesState(true);
+        addAndMakeVisible(enableToggle);
+        
+        // Update immediately on click instead of waiting for timer
+        enableToggle.onStateChange = [this]()
+        {
+            enabled = enableToggle.getToggleState();
+        };
+    }
+
+    ~ExternalAudioComponent()
+    {
+    }
+
+    void paint (Graphics& g) override
+    {
+        g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
+    }
+
+    void resized() override
+    {
+        Grid grid;
+
+        grid.templateRows = { Grid::TrackInfo (Grid::Fr (1))};
+        grid.templateColumns = { Grid::TrackInfo (Grid::Fr (1))};
+        grid.items = { GridItem (enableToggle).withMargin ({ 1 })};
+        grid.performLayout (getLocalBounds());
+    }
+    
+    bool audioEnabled()
+    {
+        return enabled;
+    }
+    
+    
+    ToggleButton enableToggle { "Enable" };
+    std::atomic<bool> enabled = true;
+    
+private:
+    
+    //==============================================================================
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ExternalAudioComponent)
+};
+
+
 //==============================================================================
 /**
     A simple holder component with some content, a title and an info tooltip
@@ -163,7 +214,7 @@ private:
 
     Most JUCE UI elements have built-in accessibility support and will be
     visible and controllable by accessibility clients. There are a few examples
-    of some widgets in this demo such as Sliders, Buttons and a TreeView.
+    of some widgets in this demo such as oscillator, audioClip and a TreeView.
 */
 class AudioLabComponent final : public Component
 {
@@ -175,8 +226,9 @@ public:
         setDescription ("A platform to develop your audio effects using JUCE.");
         setFocusContainerType (FocusContainerType::focusContainer);
 
-        addAndMakeVisible (buttons);
-        addAndMakeVisible (sliders);
+        addAndMakeVisible (externalAudio);
+        addAndMakeVisible (audioClip);
+        addAndMakeVisible (oscillator);
         addAndMakeVisible (effect);
         
 
@@ -187,11 +239,12 @@ public:
         Grid grid;
 
         grid.templateRows = { Grid::TrackInfo (Grid::Fr (1)), Grid::TrackInfo (Grid::Fr (2)) };
-        grid.templateColumns = { Grid::TrackInfo (Grid::Fr (1)), Grid::TrackInfo (Grid::Fr (1)) };
+        grid.templateColumns = {Grid::TrackInfo (Grid::Fr (1)), Grid::TrackInfo (Grid::Fr (1)), Grid::TrackInfo (Grid::Fr (1)) };
 
-        grid.items = { GridItem (buttons).withMargin ({ 2 }),
-                       GridItem (sliders).withMargin ({ 2 }),
-                       GridItem (effect).withMargin ({ 2 }).withColumn ({ GridItem::Span (2), {} }) };
+        grid.items = { GridItem (externalAudio).withMargin ({ 1 }),
+                       GridItem (audioClip).withMargin ({ 3 }),
+                       GridItem (oscillator).withMargin ({ 2 }),
+                       GridItem (effect).withMargin ({ 2 }).withColumn ({ GridItem::Span (3), {} }) };
 
         grid.performLayout (getLocalBounds());
     }
@@ -201,10 +254,11 @@ public:
     {
     public:
         AudioEngine (AudioDeviceManager& adm,
+                     ExternalAudioComponent& ex,
                      AudioPlayerComponent& af,
                      OscillatorComponent& osc,
                      EffectComponent& fx)
-            : deviceManager (adm), audioFile (af), oscillator (osc), effect (fx)
+            : deviceManager (adm), externalAudio(ex), audioFile (af), oscillator (osc), effect (fx)
         {
             deviceManager.addAudioCallback (this);  // register on the SHARED manager
         }
@@ -217,8 +271,10 @@ public:
         void audioDeviceAboutToStart (AudioIODevice* device) override
         {
             double sampleRate = device->getCurrentSampleRate();
+            DBG("Device sample rate: " << device->getCurrentSampleRate());
             int blockSize     = device->getCurrentBufferSizeSamples();
-            ProcessSpec spec { sampleRate, (uint32) blockSize, 2 };
+            //BigInteger numChannels = device->getActiveInputChannels();
+            ProcessSpec spec { sampleRate, (uint32) blockSize, (uint32) 2};
             audioFile.prepare (spec);
             oscillator.prepare (spec);
             effect.prepare (spec);
@@ -234,26 +290,38 @@ public:
         {
 
             AudioBuffer<float> buffer (outputChannelData, numOutputChannels, numSamples);
-
-            for (int ch = 0; ch < numOutputChannels; ++ch)
+            if (externalAudio.audioEnabled())
             {
-                auto* in  = (ch < numInputChannels) ? inputChannelData[ch] : nullptr;
-                auto* out = outputChannelData[ch];
+                for (int ch = 0; ch < numOutputChannels; ++ch)
+                {
+                    auto* in  = (ch < numInputChannels) ? inputChannelData[ch] : nullptr;
+                    auto* out = outputChannelData[ch];
 
-                if (in != nullptr)
-                    FloatVectorOperations::copy (out, in, numSamples);
-                else
-                    FloatVectorOperations::clear (out, numSamples);
+                    if (in != nullptr)
+                        FloatVectorOperations::copy (out, in, numSamples);
+                    else
+                        FloatVectorOperations::clear (out, numSamples);
+                }
+                
             }
+            else
+            {
+                for (int ch = 0; ch < numOutputChannels; ++ch)
+                        FloatVectorOperations::clear (outputChannelData[ch], numSamples);
+            }
+            
+
             
             AudioBlock<float> block (buffer);
             ProcessContextReplacing<float> context (block);
-            // TODO: Add boolean check
             if (audioFile.enabled())
                 audioFile.process (context);
             if (oscillator.oscEnabled)
+            {
                 oscillator.process (context);
+            }
             effect.process (context);
+
         }
 
         void audioDeviceStopped() override
@@ -264,6 +332,7 @@ public:
 
     private:
         AudioDeviceManager& deviceManager;
+        ExternalAudioComponent& externalAudio;
         AudioPlayerComponent& audioFile;
         OscillatorComponent&  oscillator;
         EffectComponent&      effect;
@@ -271,14 +340,19 @@ public:
     //==============================================================================
     Label descriptionLabel { {}, "Audio" };
 
+    ExternalAudioComponent externalAudioComponent;
     AudioPlayerComponent audioFileComponent;
     OscillatorComponent oscillatorComponent;
     EffectComponent effectComponent;
+    
+    ContentComponent externalAudio { "ExternalAudio",
+                               "Choose an audio clip.",
+        externalAudioComponent};
 
-    ContentComponent buttons { "AudioClip",
+    ContentComponent audioClip { "AudioClip",
                                "Choose an audio clip.",
                                audioFileComponent };
-    ContentComponent sliders { "Oscillator",
+    ContentComponent oscillator { "Oscillator",
                                "Enable the oscillator.",
                                oscillatorComponent };
     ContentComponent effect { "Effect",
@@ -333,7 +407,7 @@ public:
         tabs.addTab ("Audio Settings",              tabColour, &audioManagerContentComponent,    false);
         addAndMakeVisible (tabs);
 
-        setSize (800, 600);
+        setSize (1000, 600);
     }
 
     void paint (Graphics& g) override
@@ -358,6 +432,7 @@ private:
     AudioLabComponent audioLabComponent { audioManagerContentComponent.deviceManager };
     AudioLabComponent::AudioEngine audioEngine {
                                             audioManagerContentComponent.deviceManager,
+                                            audioLabComponent.externalAudioComponent,
                                             audioLabComponent.audioFileComponent,
                                             audioLabComponent.oscillatorComponent,
                                             audioLabComponent.effectComponent };

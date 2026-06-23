@@ -4,6 +4,8 @@
 #include "AudioDeviceManager.h"
 #include "DSPDemos_Common.h"
 #include <juce_core/juce_core.h>
+#include "float.h"
+#include "math.h"
 
 using namespace dsp;
 using namespace std;
@@ -14,7 +16,25 @@ using namespace std;
     sandbox new effects. 
 */
 
+#define NUM_HARMONICS 6
 #define NUM_ROTARY_KNOBS 6
+#define NUM_MUSIC_NOTES 88
+
+enum NOTES{
+    A,
+    Bb,
+    B,
+    C,
+    Db,
+    D,
+    Eb,
+    E,
+    F,
+    Gb,
+    G,
+    Ab,
+};
+
 //==============================================================================
 class EffectComponent final : public Component,
                                 private juce::Timer
@@ -45,7 +65,13 @@ public:
             setUpSlider (rotarySliders[i], Slider::Rotary, rotarySliderLabels[i], rotarySliderStrings[i],
                          default_values[i][0], default_values[i][1], default_values[i][2], default_values[i][3]);
         
-        startTimerHz (30); // call timerCallback 30 times per second
+                                 // Dropdowns
+        typeBox.addItemList ({ "None", "Major", "Minor", "Dominant", "Flute", "Violin"}, 1); // Type
+        typeBox.setSelectedId (1);
+        addAndMakeVisible (typeBox);
+
+        
+        startTimerHz (100); // call timerCallback 30 times per second
         
     }
 
@@ -56,22 +82,30 @@ public:
         myFFTThread.waitForThreadToExit(4000);
     }
 
+    struct Frequency{
+        float freq = 0.0;
+        float note = 0.0;
+        int semitones = 0;
+        float magnitude = 0.0;
+        float phase = 0.0;
+        juce::String note_name;
+    };
+    
     // Called 30x/sec on the message thread — safe to read Sliders here
     void timerCallback() override
     {
         updateParameters();
-        juce::ScopedLock sl(binMagnitudesLock);
+        juce::ScopedLock sl(freqBinLock);
 
-        int actualTopN = juce::jmin(topN, (int)binMagnitudes.size());
-        DBG("New:");
-        for (uint8_t i = 0; i < actualTopN; i++)
+        int actualnumFrequencies = juce::jmin(numFrequencies, (int)freqBin.size());
+        for (uint8_t i = 0; i < actualnumFrequencies; i++)
         {
-            float freq = binMagnitudes[i].first;
-            float mag  = binMagnitudes[i].second;
             
             DBG("[" + juce::String(i) + "] "
-                + "Freq: "  + juce::String(freq, 1) + " Hz  "  // 1 decimal place
-                + "Mag: "   + juce::String(mag,  4));
+                + "Freq: "  + juce::String(freqBin[i].freq, 4) + " Hz  "  // 1 decimal place
+                + "Mag: "   + juce::String(freqBin[i].magnitude,  4)
+                + " Semitones: "   + juce::String(freqBin[i].semitones)
+                + " Note:  " + freqBin[i].note_name);
             
         }
         
@@ -88,9 +122,10 @@ public:
         Grid grid;
 
         grid.templateRows = { Grid::TrackInfo (30_px),
-                                Grid::TrackInfo (Grid::Fr (1)),
-                                Grid::TrackInfo (30_px),
-                                Grid::TrackInfo (Grid::Fr (1)), };
+            Grid::TrackInfo (Grid::Fr (1)),
+            Grid::TrackInfo (30_px),
+            Grid::TrackInfo (Grid::Fr (1)),
+            Grid::TrackInfo (Grid::Fr (1)), };
 
         grid.templateColumns = { Grid::TrackInfo (Grid::Fr (1)),
                                     Grid::TrackInfo (Grid::Fr (1)),
@@ -113,20 +148,155 @@ public:
         grid.items.add (GridItem (rotarySliders[3]).withMargin ({ 1}));
         grid.items.add (GridItem (rotarySliders[4]).withMargin ({ 1 }));
         grid.items.add (GridItem (rotarySliders[5]).withMargin ({ 1 }));
+
+        grid.items.add (GridItem (typeBox).withMargin ({ 1 }));
                 
         grid.performLayout (getLocalBounds());
         
     }
     
+    class fftThread: public juce::Thread
+    {
+        public:
+            fftThread(EffectComponent& owner): Thread("FFT Thread"), owner(owner){}
+            
+            void run() override
+            {
+                while (!threadShouldExit())
+                {
+                    if (owner.nextFFTBlockReady)
+                    {
+
+                        // Window Data
+                        owner.window.multiplyWithWindowingTable (owner.fftData.data(), owner.fftSize);
+                        // Then FFT
+                        owner.forwardFFT.performRealOnlyForwardTransform (owner.fftData.data());
+                    
+
+                        auto* cdata = reinterpret_cast<std::complex<float>*>(owner.fftData.data());
+                        std::vector<Frequency> newfreqBin;
+
+                        for (int i = 2; i < fftSize / 2 - 1; ++i)
+                        {
+                            float magnitude = std::abs(cdata[i]);
+                            //float phase = std::arg(cdata[i]);
+
+                            // Threshold to skip noise
+                            if (magnitude < owner.threshold)
+                                continue;
+                            
+//                            for (int i = 1; i < 20; ++i)
+//                            {
+//                                float mag = std::abs(cdata[i]);
+//                                float freq = i * (owner.sampleRate / owner.fftSize);
+//                                DBG("Bin " << i << " | " << freq << " Hz | Mag: " << mag);
+//                            }
+                            Frequency newFreq;
+                            newFreq.magnitude = magnitude;
+                            owner.getFrequencyFromBin(&newFreq, i);
+                            
+                            if (newFreq.freq < 80)
+                                continue;
+                            newfreqBin.push_back({ newFreq });
+                        }
+
+
+ 
+
+                        if (!newfreqBin.empty())
+                        {
+            
+                            if (owner.goodSamples < owner.minSamples)
+                                owner.goodSamples++;
+                            
+                        }
+                        else
+                        {
+                            
+                            if (owner.goodSamples >= 1)
+                                owner.goodSamples--;
+                        }
+                        
+                        // Check if we should play
+                        if ( owner.goodSamples >= owner.minSamples)
+                        {
+                            owner.play = true;
+                            if (!newfreqBin.empty())
+                            {
+                                
+                                if (owner.harmonics == 0)
+                                {
+                                    for (uint8_t i=0; i < owner.numFrequencies; i++)
+                                    {
+                                        owner.oscillators[i].setFrequency(newfreqBin[i].note * owner.freqMultiplier) ;
+                                    }
+                                }
+                                else
+                                {
+                                    float baseFreq = newfreqBin[0].note;
+                                    for (uint8_t i=0; i < 10; i++)
+                                    {
+                                        owner.oscillators[i].setFrequency( owner.harmonic_table[owner.harmonics][i] * baseFreq * owner.freqMultiplier);
+                                        //owner.harmonic_gain_table[i] =
+
+                                    }
+                                }
+    
+                            };
+                        }
+                        else
+                        {
+                            owner.play = false;
+                        }
+                        juce::ScopedLock sl(owner.freqBinLock);
+                        owner.freqBin = std::move(newfreqBin);
+             
+                        owner.nextFFTBlockReady = false;
+               
+                            
+                    }
+                    //wait(1);
+                }
+            }
+        
+
+        private:
+            EffectComponent& owner;
+
+    };
+    
 
     void prepare (const ProcessSpec& spec)
     {
+        for (int i = 0; i < NUM_MUSIC_NOTES; i++)
+        {
+
+            notes[i] = note_freq_by_index(i);
+            DBG("Index: " + juce::String(i) + "Note: "  + juce::String(notes[i], 4) + " Hz  ");
+
+        }
+        audioBufferMemory.allocate (spec.numChannels * spec.maximumBlockSize * sizeof (float), true);
+        audioBuffer = AudioBlock<float> (audioBufferMemory, spec.numChannels, spec.maximumBlockSize);
+        
+        oscBufferMemory.allocate (spec.numChannels * spec.maximumBlockSize * sizeof (float), true);
+        oscBuffer = AudioBlock<float> (oscBufferMemory, spec.numChannels, spec.maximumBlockSize);
+        
+        for (auto&& oscillator : oscillators)
+        {
+            oscillator.prepare (spec);
+        }
+
+        
         sampleRate = (float)spec.sampleRate;
         if (!myFFTThread.isThreadRunning())
             myFFTThread.startThread();
 
 
+        dryWetMixer.prepare({ sampleRate, (juce::uint32) audioBuffer.getNumSamples(), (juce::uint32) audioBuffer.getNumChannels() });
+
+
     }
+    
 
     void process (const ProcessContextReplacing<float>& context)
     {
@@ -146,21 +316,128 @@ public:
             {
                 auto inputSample = input[i];
                 pushNextSampleIntoFifo(inputSample);
+
                 output[i] = inputSample;
             }
         }
+        
+        if (play)
+        {
+            dryWetMixer.pushDrySamples(inputBlock);
+            audioBuffer.clear ();
+            oscBuffer.clear();
+
+            ProcessContextReplacing<float> wetContext(audioBuffer);
+            ProcessContextReplacing<float> oscContext (oscBuffer);
+            
+            int actualnumFrequencies = 0;
+            if (harmonics == 0)
+            {
+                actualnumFrequencies = juce::jmin(numFrequencies, (int)freqBin.size());
+            }
+            else
+            {
+                actualnumFrequencies = numFrequencies;
+            }
+                
+            for (uint8_t i=0; i < actualnumFrequencies; i++)
+            {
+                oscBuffer.clear();
+                oscillators[i].process(oscContext);
+                oscGain.setGainLinear(harmonic_table_gains[harmonics][i]);
+                oscGain.process(oscContext);
+                
+                audioBuffer.add(oscBuffer);
+            }
+            dryWetMixer.mixWetSamples(audioBuffer);
+            outputBlock.copyFrom (audioBuffer);
+            
+        }
+   
     }
     
 
-    void reset() {
+    void reset() 
+    {
         
     }
     
-    uint16_t getFrequencyFromBin(uint16_t binIndex)
+    float note_freq_by_index(int n)
+    {
+        return 440 * std::pow(2, (n-49)/12.0f);
+    }
+    
+    int get_semitones(float freq)
+    {
+        return 12*std::log2(freq/27.5);
+    }
+
+
+
+
+    juce::String get_note_name(int semitones)
+    {
+        int note = semitones % 12;
+        int octave = std::floor(semitones/12);
+
+        juce::String note_name;
+
+        switch(note)
+        {
+            case (A):
+                note_name = "A";
+                break;
+            case (Bb):
+                note_name = "A#/Bb";
+                break;
+            case (B):
+                note_name = "B";
+                break;
+            case (C):
+                note_name = "C";
+                break;
+            case (Db):
+                note_name = "C#/Db";
+                break;
+            case (D):
+                note_name = "D";
+                break;
+            case (Eb):
+                note_name = "D#/Eb";
+                break;
+            case (E):
+                note_name = "E";
+                break;
+            case (F):
+                note_name = "F";
+                break;
+            case (Gb):
+                note_name = "F#/Gb";
+                break;
+            case (G):
+                note_name = "G";
+                break;
+            case (Ab):
+                note_name = "G#/Ab";
+                break;
+            default:
+                note_name = "";
+                break;
+    }
+
+        return note_name + juce::String(octave);
+    }
+    
+    void getFrequencyFromBin(Frequency *newFreq, int binIndex)
     {
         // Get SampleRate
-        return (binIndex * sampleRate)/fftSize;
+        newFreq->freq = ((binIndex * sampleRate) / static_cast<float>(fftSize));
+        newFreq->semitones = get_semitones(newFreq->freq);
+        newFreq->note = notes[newFreq->semitones];
+        newFreq->note_name = get_note_name(newFreq->semitones);
     }
+
+
 
     void pushNextSampleIntoFifo(float sample) noexcept
     {
@@ -168,7 +445,6 @@ public:
         if (fifoIndex == fftSize)
         {
 
-            //DBG("FFT Max Level " + juce::String(maxLevel));
             if (!nextFFTBlockReady)
             {
                 std::fill(fftData.begin(), fftData.end(), 0.0f);
@@ -179,6 +455,23 @@ public:
         }
         fifo[(size_t) fifoIndex++] = sample;
     }
+    
+    float convertFreqMultiplier(float value)
+    {
+        if (value >= 1.0)
+        {
+            return value +1.0;
+        }
+        if (value == 0)
+        {
+            return 1.0;
+        }
+        if (value < 0)
+        {
+            return  (1/(abs(value) *2));
+        }
+        return 1.0;
+    }
 
     void updateParameters()
     {
@@ -187,100 +480,128 @@ public:
         {
             values[i] = static_cast<float> (rotarySliders[i].getValue());
         }
+        
+        threshold = values[0];
+        minSamples = int(values[1]);
+        numFrequencies = int(values[2]);
+        mix = values[3];
+        freqMultiplier = convertFreqMultiplier(values[4]);
 
+        harmonics = jmin(NUM_HARMONICS, typeBox.getSelectedItemIndex());
+        dryWetMixer.setWetMixProportion(mix);
     }
     
-    class fftThread: public juce::Thread
+    
+    //TODO: Add other synths
+    //==============================================================================
+    Oscillator<float> oscillators[15] =
     {
-        public:
-            fftThread(EffectComponent& owner): Thread("FFT Thread"), owner(owner){}
-            
-            void run() override
-            {
-                while (!threadShouldExit())
-                {
-                    if (owner.nextFFTBlockReady)
-                    {
-
-                        // Window Data
-                        owner.window.multiplyWithWindowingTable (owner.fftData.data(), owner.fftSize);
-                        // Then FFT
-                        owner.forwardFFT.performFrequencyOnlyForwardTransform (owner.fftData.data());
-                        
-
-                        
-                        std::vector<std::pair<uint16_t, float>> newBinMagnitudes;
-                        // Skip 0 because thats 0Hz
-                        for (uint16_t i=0; i<fftSize/2; ++i)
-                        {
-                            float magnitude = owner.fftData[i];
-                            // Threshold to skip noise
-                            if (magnitude < 0.1f)
-                                continue;
-                            newBinMagnitudes.push_back({ owner.getFrequencyFromBin(i), magnitude});
-                        }
-
-                        if (!newBinMagnitudes.empty())
-                        {
-                            
-                            int actualTopN = juce::jmin(owner.topN, (int)newBinMagnitudes.size());
-                            // Partial sort — only sorts enough to get top N, O(n log k)
-                            std::partial_sort(newBinMagnitudes.begin(),
-                                              newBinMagnitudes.begin() + actualTopN,
-                                              newBinMagnitudes.end(),
-                                              [](const std::pair<uint16_t, float>& a, const std::pair<uint16_t, float>& b)
-                                              {
-                                return a.second > b.second;
-                            });
-                            
-                        }
-                        juce::ScopedLock sl(owner.binMagnitudesLock);
-                        owner.binMagnitudes = std::move(newBinMagnitudes);
-             
-                        owner.nextFFTBlockReady = false;
-               
-                            
-                    }
-                    wait(10);
-                }
-            }
-
-        private:
-            EffectComponent& owner;
-
+        // No Approximation
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
+        {[] (float x) { return std::sin (x); }},                   // sine
     };
+    
 
 
+    
 public:
+    
     // Effect
-    int topN = 4;
-    static constexpr auto fftOrder = 11;
+    float threshold = 5.0;
+    int numFrequencies = 1;
+    int minSamples = 1;
+    int goodSamples = 0;
+    float freqMultiplier = 1.0;
+    float mix = 0.5;
+    int harmonics = 0;
+    float notes[NUM_MUSIC_NOTES];
+    bool play = false;
+    juce::dsp::DryWetMixer<float> dryWetMixer;
+    juce::dsp::Gain<float> oscGain;
+    
+    // FFT Variables
+    static constexpr auto fftOrder = 12;
     static constexpr auto fftSize = 1 << fftOrder;
+    static constexpr auto hopSize = 2048;
     juce::dsp::FFT forwardFFT;
     std::array<float, fftSize> fifo;
     std::array<float, fftSize * 2> fftData;
     int fifoIndex = 0;
-    float sampleRate = 48000;
+    float sampleRate = 44100;
     std::atomic<bool> nextFFTBlockReady = {false};
-    std::vector<std::pair<uint16_t, float>> binMagnitudes;
+    std::vector<Frequency> freqBin;
+    //std::vector<std::pair<float, float>> freqBin;
     juce::dsp::WindowingFunction<float> window;
-    juce::CriticalSection binMagnitudesLock;
+    juce::CriticalSection freqBinLock;
     fftThread myFFTThread { *this };
+
+        
+    // Audio Buffers
+    HeapBlock<char> audioBufferMemory;
+    AudioBlock<float> audioBuffer;
+    HeapBlock<char> oscBufferMemory;
+    AudioBlock<float> oscBuffer;
     
 
 private:
+    // UI Elements
     std::array<Slider, NUM_ROTARY_KNOBS> rotarySliders;
     std::array<juce::Label, NUM_ROTARY_KNOBS> rotarySliderLabels;
-    std::array<juce::String, NUM_ROTARY_KNOBS> rotarySliderStrings = {"CTRL1","CTRL2","CTRL3","CTRL4","CTRL5","CTRL6"};
+    std::array<juce::String, NUM_ROTARY_KNOBS> rotarySliderStrings = {"Volume Cutoff","Min Samples","Num Frequencies",
+        "Dry/Wet", "Freq Multiplier","CTRL6"};
     float values[NUM_ROTARY_KNOBS];
+    ComboBox typeBox;
     float default_values[NUM_ROTARY_KNOBS][4] = {
+        {0.0, 100.0, 0.001, 5.0},
+        {0.0, 10.0, 1.0, 1.0},
+        {0.0, 100.0, 1.0, 1.0},
         {0.0, 1.0, 0.001, 0.5},
-        {0.0, 1.0, 0.001, 0.5},
-        {0.0, 1.0, 0.001, 0.5},
-        {0.0, 1.0, 0.001, 0.5},
-        {0.0, 1.0, 0.001, 0.5},
-        {0.0, 1.0, 0.001, 0.5}
+        {-10.0, 10.0, 1.0, 0.0},
+        {0.0, 10.0, 1.0, 0.0}
     };
+    
+
+    float harmonic_table[NUM_HARMONICS][10] = {
+        
+        {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10},
+        {1.0, 5.0/4.0, 3.0/2.0, 15.0/8.0, (9.0/8.0)*2.0, (4.0/3.0), 7.0, 8.0, 9.0, 10},
+        //1     3        5       b7        9
+        {1.0, 6.0/5.0, 3.0/2.0, 9.0/5.0, (9.0/8.0)*2.0, (4.0/3.0), 7.0, 8.0, 9.0, 10},
+        {1.0, 5.0/4.0, 3.0/2.0, 9.0/5.0, (9.0/8.0)*2.0, (4.0/3.0), 7.0, 8.0, 9.0, 10},
+        // FLUTE
+        {1.0, 2.0, (3.0/2.0), (4.0/3.0), (5.0/4.0), (6.0/5.0), (7.0/6.0), 8.0/7.0, 1.0, 1.0},
+        // Violin
+        {1.0, 2.0, (3.0/2.0), (4.0/3.0), (5.0/4.0), (6.0/5.0), (7.0/6.0), 8.0/7.0, 1.0, 1.0},
+    };
+    
+    float harmonic_table_gains[NUM_HARMONICS][10] = {
+        
+        {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+        {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+        {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+        {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+        // FLUTE
+        {1.0, 1.0, 0.1, 0.2, 0.26, 0.01, 0.01, 0.01, 1.0, 1.0},
+        // VIOLIN
+        {1.0, 0.6, 0.6, 0.7, 0.45, 0.2, 0.45, 0.1, 1.0, 1.0},
+
+    };
+    
+    
+    
     
 
     //==============================================================================
