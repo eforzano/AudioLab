@@ -25,6 +25,9 @@
 #define PIP_DEMO_UTILITIES_INCLUDED 1
 
 #include <JuceHeader.h>
+using namespace juce;
+
+
 
 //==============================================================================
 /*
@@ -33,23 +36,23 @@
 */
 
 //==============================================================================
-inline Colour getRandomColour (float brightness) noexcept
+inline juce::Colour getRandomColour (float brightness) noexcept
 {
-    return Colour::fromHSV (Random::getSystemRandom().nextFloat(), 0.5f, brightness, 1.0f);
+    return juce::Colour::fromHSV (juce::Random::getSystemRandom().nextFloat(), 0.5f, brightness, 1.0f);
 }
 
-inline Colour getRandomBrightColour() noexcept  { return getRandomColour (0.8f); }
-inline Colour getRandomDarkColour() noexcept    { return getRandomColour (0.3f); }
+inline juce::Colour getRandomBrightColour() noexcept  { return getRandomColour (0.8f); }
+inline juce::Colour getRandomDarkColour() noexcept    { return getRandomColour (0.3f); }
 
-inline Colour getUIColourIfAvailable (LookAndFeel_V4::ColourScheme::UIColour uiColour, Colour fallback = Colour (0xff4d4d4d)) noexcept
+inline  juce::Colour getUIColourIfAvailable ( juce::LookAndFeel_V4::ColourScheme::UIColour uiColour,  juce::Colour fallback =  juce::Colour (0xff4d4d4d)) noexcept
 {
-    if (auto* v4 = dynamic_cast<LookAndFeel_V4*> (&LookAndFeel::getDefaultLookAndFeel()))
+    if (auto* v4 = dynamic_cast<juce::LookAndFeel_V4*> (&juce::LookAndFeel::getDefaultLookAndFeel()))
         return v4->getCurrentColourScheme().getUIColour (uiColour);
 
     return fallback;
 }
 
-inline File getExamplesDirectory() noexcept
+inline  juce::File getExamplesDirectory() noexcept
 {
    #ifdef PIP_JUCE_EXAMPLES_DIRECTORY
     MemoryOutputStream mo;
@@ -62,7 +65,7 @@ inline File getExamplesDirectory() noexcept
    #elif defined PIP_JUCE_EXAMPLES_DIRECTORY_STRING
     return File { CharPointer_UTF8 { PIP_JUCE_EXAMPLES_DIRECTORY_STRING } };
    #else
-    auto currentFile = File::getSpecialLocation (File::SpecialLocationType::currentApplicationFile);
+    auto currentFile = juce::File::getSpecialLocation (juce::File::SpecialLocationType::currentApplicationFile);
     auto exampleDir = currentFile.getSiblingFile ("examples");
 
     if (exampleDir.exists())
@@ -92,7 +95,7 @@ enum class AssertAssetExists
     yes
 };
 
-inline std::unique_ptr<InputStream> createAssetInputStream (const char* resourcePath,
+inline std::unique_ptr<juce::InputStream> createAssetInputStream (const char* resourcePath,
                                                             [[maybe_unused]] AssertAssetExists assertExists = AssertAssetExists::yes)
 {
   #if JUCE_ANDROID
@@ -111,7 +114,7 @@ inline std::unique_ptr<InputStream> createAssetInputStream (const char* resource
     auto assetsDir = File::getSpecialLocation (File::currentExecutableFile)
                           .getSiblingFile ("Assets");
    #elif JUCE_MAC
-    auto assetsDir = File::getSpecialLocation (File::currentExecutableFile)
+    auto assetsDir = juce::File::getSpecialLocation (juce::File::currentExecutableFile)
                           .getParentDirectory().getSiblingFile ("Resources").getChildFile ("Assets");
 
     if (! assetsDir.exists())
@@ -132,9 +135,9 @@ inline std::unique_ptr<InputStream> createAssetInputStream (const char* resource
   #endif
 }
 
-inline Image getImageFromAssets (const char* assetName)
+inline juce::Image getImageFromAssets (const char* assetName)
 {
-    auto hashCode = (String (assetName) + "@juce_demo_assets").hashCode64();
+    auto hashCode = (juce::String (assetName) + "@juce_demo_assets").hashCode64();
     auto img = ImageCache::getFromHashCode (hashCode);
 
     if (img.isNull())
@@ -163,7 +166,7 @@ inline String loadEntireAssetIntoString (const char* assetName)
 }
 
 //==============================================================================
-inline Path getJUCELogoPath()
+inline juce::Path getJUCELogoPath()
 {
     return Drawable::parseSVGPath (
         "M72.87 84.28A42.36 42.36 0 0130.4 42.14a42.48 42.48 0 0184.95 0 42.36 42.36 0 01-42.48 42.14zm0-78.67A36.74 36.74 0 0036 42.14a36.88 36.88 0 0073.75 0A36.75 36.75 0 0072.87 5.61z"

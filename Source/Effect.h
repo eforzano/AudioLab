@@ -1,19 +1,22 @@
 #pragma once
 
-#include "DemoUtilities.h"
-#include "AudioDeviceManager.h"
-#include "DSPDemos_Common.h"
-#include <juce_core/juce_core.h>
-#include "float.h"
-#include "math.h"
+#include <JuceHeader.h>
+#include <juce_dsp/juce_dsp.h>
+#include <cfloat>
+#include <cmath>
+#include <complex>
+#include <vector>
+#include <array>
+#include <atomic>
 
-using namespace dsp;
+using namespace juce;
+using namespace juce::dsp;
 using namespace std;
 
 //==============================================================================
 /**
-    EffectsComponent with 6 Slider components so that the user can easily 
-    sandbox new effects. 
+    EffectsComponent with 6 Slider components so that the user can easily
+    sandbox new effects.
 */
 
 #define NUM_HARMONICS 6
@@ -42,7 +45,7 @@ class EffectComponent final : public Component,
 public:
     EffectComponent()
     :forwardFFT (fftOrder),
-     window(fftSize, juce::dsp::WindowingFunction<float>::hann)
+     window(fftSize, WindowingFunction<float>::hann)
     {
         auto setUpSlider = [this] (Slider& slider, Slider::SliderStyle style,
                     Label& label, const juce::String& name,
@@ -98,6 +101,7 @@ public:
         juce::ScopedLock sl(freqBinLock);
 
         int actualnumFrequencies = juce::jmin(numFrequencies, (int)freqBin.size());
+    
         for (uint8_t i = 0; i < actualnumFrequencies; i++)
         {
             
@@ -176,28 +180,46 @@ public:
                         auto* cdata = reinterpret_cast<std::complex<float>*>(owner.fftData.data());
                         std::vector<Frequency> newfreqBin;
 
-                        for (int i = 2; i < fftSize / 2 - 1; ++i)
+                        for (int i = 1; i < fftSize / 2; ++i)
                         {
-                            float magnitude = std::abs(cdata[i]);
+
+                            float center_magnitude = std::abs(cdata[i]);
+
                             //float phase = std::arg(cdata[i]);
 
                             // Threshold to skip noise
-                            if (magnitude < owner.threshold)
+                            if (center_magnitude < owner.threshold)
                                 continue;
                             
-//                            for (int i = 1; i < 20; ++i)
-//                            {
-//                                float mag = std::abs(cdata[i]);
-//                                float freq = i * (owner.sampleRate / owner.fftSize);
-//                                DBG("Bin " << i << " | " << freq << " Hz | Mag: " << mag);
-//                            }
-                            Frequency newFreq;
-                            newFreq.magnitude = magnitude;
-                            owner.getFrequencyFromBin(&newFreq, i);
+                            float left_magnitude = std::abs(cdata[i-1]);
+                            float right_magnitude = std::abs(cdata[i+1]);
+ 
                             
-                            if (newFreq.freq < 80)
-                                continue;
-                            newfreqBin.push_back({ newFreq });
+                            if ((center_magnitude > left_magnitude) && (center_magnitude > right_magnitude))
+                            {
+                                DBG(" [left]");
+                                Frequency leftFreq;
+                                owner.getFrequencyFromBin(&leftFreq, left_magnitude, i-1);
+                              
+                                
+                                DBG(" [center] ");
+                                Frequency centerFreq;
+                                owner.getFrequencyFromBin(&centerFreq, center_magnitude, i);
+
+                                DBG(" [right] ");
+                                Frequency rightFreq;
+                                owner.getFrequencyFromBin(&rightFreq, right_magnitude, i+1);
+                                
+                                DBG("\n");
+                                
+                                
+                                if (centerFreq.freq < 80)
+                                    continue;
+                                newfreqBin.push_back({ centerFreq });
+                            }
+
+                                  
+
                         }
 
 
@@ -272,7 +294,7 @@ public:
         {
 
             notes[i] = note_freq_by_index(i);
-            DBG("Index: " + juce::String(i) + "Note: "  + juce::String(notes[i], 4) + " Hz  ");
+            //DBG("Index: " + juce::String(i) + "Note: "  + juce::String(notes[i], 4) + " Hz  ");
 
         }
         audioBufferMemory.allocate (spec.numChannels * spec.maximumBlockSize * sizeof (float), true);
@@ -357,7 +379,7 @@ public:
     }
     
 
-    void reset() 
+    void reset()
     {
         
     }
@@ -369,7 +391,7 @@ public:
     
     int get_semitones(float freq)
     {
-        return 12*std::log2(freq/27.5);
+        return 12.0f*std::log2(freq/27.5);
     }
 
 
@@ -378,7 +400,7 @@ public:
     juce::String get_note_name(int semitones)
     {
         int note = semitones % 12;
-        int octave = std::floor(semitones/12);
+        int octave = std::round(semitones/12);
 
         juce::String note_name;
 
@@ -428,14 +450,23 @@ public:
         return note_name + juce::String(octave);
     }
     
-    void getFrequencyFromBin(Frequency *newFreq, int binIndex)
+    void getFrequencyFromBin(Frequency *newFreq, float magnitude, int binIndex)
     {
         // Get SampleRate
-        newFreq->freq = ((binIndex * sampleRate) / static_cast<float>(fftSize));
+        newFreq->magnitude = magnitude;
+        newFreq->freq = (((binIndex+1) * sampleRate) / static_cast<float>(fftSize));
         newFreq->semitones = get_semitones(newFreq->freq);
         newFreq->note = notes[newFreq->semitones];
         newFreq->note_name = get_note_name(newFreq->semitones);
+        
+        DBG("[" + juce::String(binIndex) + "] "
+        + "Freq: "  + juce::String(newFreq->freq, 4) + " Hz  "  // 1 decimal place
+        + "Mag: "   + juce::String(newFreq->magnitude,  4)
+        + " Semitones: "   + juce::String(newFreq->semitones)
+        + " Note:  " + newFreq->note_name);
+        
     }
+
 
 
 
@@ -520,7 +551,7 @@ public:
 public:
     
     // Effect
-    float threshold = 5.0;
+    float threshold = 15.0;
     int numFrequencies = 1;
     int minSamples = 1;
     int goodSamples = 0;
@@ -529,14 +560,14 @@ public:
     int harmonics = 0;
     float notes[NUM_MUSIC_NOTES];
     bool play = false;
-    juce::dsp::DryWetMixer<float> dryWetMixer;
-    juce::dsp::Gain<float> oscGain;
+    DryWetMixer<float> dryWetMixer;
+    Gain<float> oscGain;
     
     // FFT Variables
     static constexpr auto fftOrder = 12;
     static constexpr auto fftSize = 1 << fftOrder;
     static constexpr auto hopSize = 2048;
-    juce::dsp::FFT forwardFFT;
+    FFT forwardFFT;
     std::array<float, fftSize> fifo;
     std::array<float, fftSize * 2> fftData;
     int fifoIndex = 0;
@@ -544,7 +575,7 @@ public:
     std::atomic<bool> nextFFTBlockReady = {false};
     std::vector<Frequency> freqBin;
     //std::vector<std::pair<float, float>> freqBin;
-    juce::dsp::WindowingFunction<float> window;
+    WindowingFunction<float> window;
     juce::CriticalSection freqBinLock;
     fftThread myFFTThread { *this };
 
@@ -565,10 +596,10 @@ private:
     float values[NUM_ROTARY_KNOBS];
     ComboBox typeBox;
     float default_values[NUM_ROTARY_KNOBS][4] = {
-        {0.0, 100.0, 0.001, 5.0},
+        {0.0, 100.0, 0.001, threshold},
         {0.0, 10.0, 1.0, 1.0},
         {0.0, 100.0, 1.0, 1.0},
-        {0.0, 1.0, 0.001, 0.5},
+        {0.0, 1.0, 0.001, 0.0},
         {-10.0, 10.0, 1.0, 0.0},
         {0.0, 10.0, 1.0, 0.0}
     };

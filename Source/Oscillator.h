@@ -8,12 +8,13 @@
 
 #pragma once
 
-#include "DemoUtilities.h"
-#include "AudioDeviceManager.h"
-#include "DSPDemos_Common.h"
-#include "float.h"
-#include "math.h"
-using namespace dsp;
+#include <JuceHeader.h>
+#include <juce_dsp/juce_dsp.h>
+#include <cfloat>
+#include <cmath>
+
+using namespace juce;
+using namespace juce::dsp;
 
 class PinkNoise
 {
@@ -182,7 +183,7 @@ public:
         auto freq = static_cast<float> (freqSlider.getValue());
         
         for (auto&& oscillator : oscillators)
-            oscillator.setFrequency (freq);            
+            oscillator.setFrequency (freq);
 
         gain.setGainDecibels (static_cast<float> (gainSlider.getValue()));
 
@@ -230,5 +231,3 @@ private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OscillatorComponent)
 };
-    
-

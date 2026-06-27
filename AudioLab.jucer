@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="AudioLab" companyName="Tuesday Night Instruments" version="1.0.0"
-              userNotes="Simple UI demonstrating accessibility features on supported platforms."
-              defines="PIP_JUCE_EXAMPLES_DIRECTORY=L1VzZXJzL2VybmVzdGZvcnphbm8vRGVza3RvcC9KVUNFL2V4YW1wbGVz"
-              projectType="guiapp" useAppConfig="0" addUsingNamespaceToJuceHeader="1"
-              id="xkyPTB" jucerFormatVersion="1" pluginCharacteristicsValue="pluginIsMidiEffectPlugin,pluginIsSynth,pluginProducesMidiOut,pluginWantsMidiIn"
-              pluginFormats="buildVST3">
-  <MAINGROUP id="Fs56nt" name="AudioLab">
-    <GROUP id="{BFDC3D6D-FBD4-C7D0-7B63-DE7E7D7B8EB2}" name="Source">
-      <FILE id="twIPUo" name="AudioPlayer.h" compile="0" resource="0" file="Source/AudioPlayer.h"/>
-      <FILE id="QbHfEt" name="Oscillator.h" compile="0" resource="0" file="Source/Oscillator.h"/>
-      <FILE id="BmVfnD" name="Effect.h" compile="0" resource="0" file="Source/Effect.h"/>
-      <FILE id="HGgW2F" name="AudioDeviceManager.h" compile="0" resource="0"
-            file="Source/AudioDeviceManager.h"/>
-      <FILE id="J7hPl5" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
-      <FILE id="LzHwTS" name="AudioLab.h" compile="0" resource="0" file="Source/AudioLab.h"/>
-    </GROUP>
-    <GROUP id="ZAkim0" name="Assets">
-      <FILE id="mU97kw" name="DemoUtilities.h" compile="0" resource="0" file="Source/DemoUtilities.h"/>
-      <FILE id="x57OCO" name="DSPDemos_Common.h" compile="0" resource="0"
+<JUCERPROJECT id="Qp0Coy" name="AudioLab" projectType="audioplug" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginManufacturer="Tuesday Night Instruments"
+              pluginCharacteristicsValue="pluginProducesMidiOut,pluginWantsMidiIn"
+              pluginAUMainType="'aumf'" pluginVST3Category="Analyzer,Fx">
+  <MAINGROUP id="xF8m6S" name="AudioLab">
+    <GROUP id="{EE2BF8DC-EE15-EA3A-8960-6A5296EAF891}" name="Source">
+      <FILE id="FpYWm5" name="DSPDemos_Common.h" compile="0" resource="0"
             file="Source/DSPDemos_Common.h"/>
+      <FILE id="CKQg4K" name="DemoUtilities.h" compile="0" resource="0" file="Source/DemoUtilities.h"/>
+      <FILE id="S9dMKB" name="Effect.h" compile="0" resource="0" file="Source/Effect.h"/>
+      <FILE id="qAYkTN" name="Oscillator.h" compile="0" resource="0" file="Source/Oscillator.h"/>
+      <FILE id="jIWJC0" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <FILE id="tKJuPl" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="YhRhYr" name="PluginEditor.cpp" compile="1" resource="0"
+            file="Source/PluginEditor.cpp"/>
+      <FILE id="hgBbrQ" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
     <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_audio_processors_headless" showAllCode="1" useLocalCopy="0"
             useGlobalPath="1"/>
@@ -38,116 +38,73 @@
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
   </MODULES>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX" customPList="&lt;key&gt;NSMicrophoneUsageDescription&lt;/key&gt;&#10;&lt;string&gt;AudioLab needs microphone access for audio input.&lt;/string&gt;"
-               microphonePermissionNeeded="1" smallIcon="" bigIcon="" iosBluetoothPermissionNeeded="1">
+    <VS2022 targetFolder="Builds/VisualStudio2022">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="AudioLab"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="AudioLab"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path=""/>
-        <MODULEPATH id="juce_data_structures" path=""/>
-        <MODULEPATH id="juce_events" path=""/>
-        <MODULEPATH id="juce_graphics" path=""/>
-        <MODULEPATH id="juce_gui_basics" path=""/>
-        <MODULEPATH id="juce_gui_extra" path=""/>
         <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_processors_headless" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
-      </MODULEPATHS>
-    </XCODE_MAC>
-    <VS2022 targetFolder="Builds/VisualStudio2022" extraCompilerFlags="/bigobj"
-            bigIcon="" smallIcon="">
-      <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
-      </CONFIGURATIONS>
-      <MODULEPATHS>
-        <MODULEPATH id="juce_core" path=""/>
-        <MODULEPATH id="juce_data_structures" path=""/>
-        <MODULEPATH id="juce_events" path=""/>
-        <MODULEPATH id="juce_graphics" path=""/>
-        <MODULEPATH id="juce_gui_basics" path=""/>
-        <MODULEPATH id="juce_gui_extra" path=""/>
-        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors_headless" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
         <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
-    <VS2026 targetFolder="Builds/VisualStudio2026" extraCompilerFlags="/bigobj"
-            bigIcon="" smallIcon="">
+    <VS2026 targetFolder="Builds/VisualStudio2026">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="AudioLab"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="AudioLab"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path=""/>
-        <MODULEPATH id="juce_data_structures" path=""/>
-        <MODULEPATH id="juce_events" path=""/>
-        <MODULEPATH id="juce_graphics" path=""/>
-        <MODULEPATH id="juce_gui_basics" path=""/>
-        <MODULEPATH id="juce_gui_extra" path=""/>
         <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_processors_headless" path="../JUCE/modules"/>
         <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
         <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
       </MODULEPATHS>
     </VS2026>
-    <ANDROIDSTUDIO targetFolder="Builds/Android" androidBluetoothScanNeeded="1"
-                   androidBluetoothAdvertiseNeeded="1" androidBluetoothConnectNeeded="1">
+    <XCODE_MAC targetFolder="Builds/MacOSX">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
+        <CONFIGURATION isDebug="1" name="Debug"/>
+        <CONFIGURATION isDebug="0" name="Release"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path=""/>
-        <MODULEPATH id="juce_data_structures" path=""/>
-        <MODULEPATH id="juce_events" path=""/>
-        <MODULEPATH id="juce_graphics" path=""/>
-        <MODULEPATH id="juce_gui_basics" path=""/>
-        <MODULEPATH id="juce_gui_extra" path=""/>
-        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors_headless" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../juce"/>
+        <MODULEPATH id="juce_audio_devices" path="../../juce"/>
+        <MODULEPATH id="juce_audio_formats" path="../../juce"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../juce"/>
+        <MODULEPATH id="juce_audio_processors" path="../../juce"/>
+        <MODULEPATH id="juce_audio_processors_headless" path="../../juce"/>
+        <MODULEPATH id="juce_audio_utils" path="../../juce"/>
+        <MODULEPATH id="juce_core" path="../../juce"/>
+        <MODULEPATH id="juce_data_structures" path="../../juce"/>
+        <MODULEPATH id="juce_events" path="../../juce"/>
+        <MODULEPATH id="juce_graphics" path="../../juce"/>
+        <MODULEPATH id="juce_gui_basics" path="../../juce"/>
+        <MODULEPATH id="juce_gui_extra" path="../../juce"/>
         <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
       </MODULEPATHS>
-    </ANDROIDSTUDIO>
-    <XCODE_IPHONE targetFolder="Builds/iOS" customXcodeResourceFolders="/Users/ernestforzano/Desktop/JUCE/examples/Assets">
-      <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="AudioLab"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="AudioLab"/>
-      </CONFIGURATIONS>
-      <MODULEPATHS>
-        <MODULEPATH id="juce_core" path=""/>
-        <MODULEPATH id="juce_data_structures" path=""/>
-        <MODULEPATH id="juce_events" path=""/>
-        <MODULEPATH id="juce_graphics" path=""/>
-        <MODULEPATH id="juce_gui_basics" path=""/>
-        <MODULEPATH id="juce_gui_extra" path=""/>
-        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors_headless" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_dsp" path="../JUCE/modules"/>
-      </MODULEPATHS>
-    </XCODE_IPHONE>
+    </XCODE_MAC>
   </EXPORTFORMATS>
-  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="0"/>
 </JUCERPROJECT>
