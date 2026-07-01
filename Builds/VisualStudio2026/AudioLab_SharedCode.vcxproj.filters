@@ -3777,6 +3777,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\NeonLookAndFeel.h">
+      <Filter>AudioLab\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Source\DSPDemos_Common.h">
       <Filter>AudioLab\Source</Filter>
     </ClInclude>

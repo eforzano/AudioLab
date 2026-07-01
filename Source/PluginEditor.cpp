@@ -57,6 +57,17 @@ void AudioLabAudioProcessorEditor::paint (juce::Graphics& g)
     // Dividing line between Oscillator and Effect panels
     auto bounds = getLocalBounds();
     const int oscHeight = bounds.getHeight() / 3;
+//
+//    // 2. Create the gradient object (color1, x1, y1, color2, x2, y2, isRadial)
+//    juce::ColourGradient gradient (juce::Colours::black,  bounds.getX(), bounds.getY(),         // Start top-left
+//                                   juce::Colours::cyan, bounds.getX(), bounds.getBottom(),   // End bottom-left
+//                                   true);                                                   // false = linear
+//
+//    // 3. Set the active fill to your gradient
+//    g.setGradientFill (gradient);
+//
+//    // 4. Fill your desired shape (rectangle, path, text, etc.)
+//    g.fillRect (bounds);
     g.setColour (juce::Colours::grey);
     g.drawHorizontalLine (oscHeight + 20, 0.0f, static_cast<float> (bounds.getWidth()));
 }

@@ -101,9 +101,7 @@ public:
     
     void paint (Graphics& g) override
     {
-        //juce::Colours::red.withAlpha (0.2f);
     }
-
     void resized() override
     {
         Grid grid;
