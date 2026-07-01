@@ -6,8 +6,6 @@
               pluginAUMainType="'aufx'" pluginVST3Category="Analyzer,Fx">
   <MAINGROUP id="xF8m6S" name="AudioLab">
     <GROUP id="{EE2BF8DC-EE15-EA3A-8960-6A5296EAF891}" name="Source">
-      <FILE id="xglkIr" name="NeonLookAndFeel.h" compile="0" resource="0"
-            file="Source/NeonLookAndFeel.h"/>
       <FILE id="FpYWm5" name="DSPDemos_Common.h" compile="0" resource="0"
             file="Source/DSPDemos_Common.h"/>
       <FILE id="CKQg4K" name="DemoUtilities.h" compile="0" resource="0" file="Source/DemoUtilities.h"/>

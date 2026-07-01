@@ -2,7 +2,6 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-#include "NeonLookAndFeel.h"
 
 class AudioLabAudioProcessorEditor : public juce::AudioProcessorEditor
 {
@@ -15,9 +14,6 @@ public:
 
 private:
     AudioLabAudioProcessor& audioProcessor;
-
-    // Must be declared before any child components that use it
-    NeonLookAndFeel neonLAF;
 
     juce::Label oscillatorLabel, effectLabel;
 
