@@ -8,12 +8,13 @@
 
 #pragma once
 
-#include "DemoUtilities.h"
-#include "AudioDeviceManager.h"
-#include "DSPDemos_Common.h"
-#include "float.h"
-#include "math.h"
-using namespace dsp;
+#include <JuceHeader.h>
+#include <juce_dsp/juce_dsp.h>
+#include <cfloat>
+#include <cmath>
+
+using namespace juce;
+using namespace juce::dsp;
 
 class PinkNoise
 {
@@ -100,9 +101,7 @@ public:
     
     void paint (Graphics& g) override
     {
-        //juce::Colours::red.withAlpha (0.2f);
     }
-
     void resized() override
     {
         Grid grid;
@@ -161,6 +160,12 @@ public:
         }
 
     }
+    
+    void setFrequency(float freq)
+    {
+        for (auto&& oscillator : oscillators)
+            oscillator.setFrequency (freq);
+    }
 
     void reset()
     {
@@ -174,7 +179,7 @@ public:
                                         (typeBox.getSelectedItemIndex()) );
 
         auto freq = static_cast<float> (freqSlider.getValue());
-
+        
         for (auto&& oscillator : oscillators)
             oscillator.setFrequency (freq);
 
@@ -199,11 +204,10 @@ public:
         {[this] (float x) { return whiteNoise();}},                // white
         {[this] (float x) { return pink.process();}},              // pink
         {[this] (float x) { return brown.process(aggression);}},   // brown
-
-
     };
 
     // Audio files
+    bool oscEnabled;
     HeapBlock<char> audioBufferMemory;
     AudioBlock<float> audioBuffer;
     double fileMix = 0.0f;
@@ -213,7 +217,7 @@ public:
     BrownNoise brown;
 
 private:
-    bool oscEnabled;
+
     int currentOscillatorIdx = 0;
     Gain<float> gain;
 
@@ -225,5 +229,3 @@ private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OscillatorComponent)
 };
-    
-

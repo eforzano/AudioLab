@@ -8,7 +8,7 @@
     <key>CFBundleIconFile</key>
     <string></string>
     <key>CFBundleIdentifier</key>
-    <string>com.JUCE.AudioLab</string>
+    <string>com.yourcompany.AudioLab</string>
     <key>CFBundleName</key>
     <string>AudioLab</string>
     <key>CFBundleDisplayName</key>
