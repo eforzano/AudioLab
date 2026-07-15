@@ -436,7 +436,7 @@ private:
           
                     for (int i = 0; i < juce::jmin (numFrequencies, (int) newBin.size()); i++)
                     {
-                        const int   detectedNote = juce::jlimit (0, 127, newBin[i].semitones + 22);
+                        const int   detectedNote = juce::jlimit (0, 127, newBin[i].semitones + 21);
                         const float velocity     = juce::jlimit (0.05f, 1.0f, newBin[i].magnitude / 200.0f);
                         
                         if(triggeredNotes.find(detectedNote) == triggeredNotes.end())
