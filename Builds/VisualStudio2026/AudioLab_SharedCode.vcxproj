@@ -3025,11 +3025,11 @@
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_gui_extra.cpp"/>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Source\NeonLookAndFeel.h"/>
     <ClInclude Include="..\..\Source\DSPDemos_Common.h"/>
     <ClInclude Include="..\..\Source\DemoUtilities.h"/>
     <ClInclude Include="..\..\Source\Effect.h"/>
     <ClInclude Include="..\..\Source\Oscillator.h"/>
+    <ClInclude Include="..\..\Source\Synthesizer.h"/>
     <ClInclude Include="..\..\Source\PluginProcessor.h"/>
     <ClInclude Include="..\..\Source\PluginEditor.h"/>
     <ClInclude Include="C:\JUCE\modules\juce_audio_basics\audio_play_head\juce_AudioPlayHead.h"/>

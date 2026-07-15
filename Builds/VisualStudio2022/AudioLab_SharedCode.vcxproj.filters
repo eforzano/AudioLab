@@ -3777,9 +3777,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Source\NeonLookAndFeel.h">
-      <Filter>AudioLab\Source</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Source\DSPDemos_Common.h">
       <Filter>AudioLab\Source</Filter>
     </ClInclude>
@@ -3790,6 +3787,9 @@
       <Filter>AudioLab\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\Oscillator.h">
+      <Filter>AudioLab\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\Synthesizer.h">
       <Filter>AudioLab\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\PluginProcessor.h">

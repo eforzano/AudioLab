@@ -131,8 +131,8 @@
 		9AE62FEBF4FA962F05C9E38E /* juce_graphics */ /* juce_graphics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_graphics; path = /Users/ernestforzano/Desktop/JUCE/modules/juce_graphics; sourceTree = "<absolute>"; };
 		A45D5A0AA742AB27459BE6BE /* AudioUnit.framework */ /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		A655C572231C85886A1CC900 /* PluginEditor.cpp */ /* PluginEditor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PluginEditor.cpp; path = ../../Source/PluginEditor.cpp; sourceTree = SOURCE_ROOT; };
-		AEBB4F5A6A775BA41ACD7871 /* NeonLookAndFeel.h */ /* NeonLookAndFeel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = NeonLookAndFeel.h; path = ../../Source/NeonLookAndFeel.h; sourceTree = SOURCE_ROOT; };
 		AEE6DCC4D43EB541B5DDA04B /* include_juce_audio_processors_headless.mm */ /* include_juce_audio_processors_headless.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_processors_headless.mm; path = ../../JuceLibraryCode/include_juce_audio_processors_headless.mm; sourceTree = SOURCE_ROOT; };
+		B0AA0C78F1011E45BC82A0D7 /* Synthesizer.h */ /* Synthesizer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Synthesizer.h; path = ../../Source/Synthesizer.h; sourceTree = SOURCE_ROOT; };
 		B3AE2BE763F2AE98C2B92436 /* juce_core */ /* juce_core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_core; path = /Users/ernestforzano/Desktop/JUCE/modules/juce_core; sourceTree = "<absolute>"; };
 		B615ACA56FC645313179C24B /* juce_audio_utils */ /* juce_audio_utils */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_utils; path = /Users/ernestforzano/Desktop/JUCE/modules/juce_audio_utils; sourceTree = "<absolute>"; };
 		B9F37C590D1422197A3150DE /* VST3 Manifest Helper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = juce_vst3_helper; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -263,11 +263,11 @@
 		64A64A34CEE26A773FA936A8 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				AEBB4F5A6A775BA41ACD7871,
 				3EECFC69A0DD55C105EC15E2,
 				43E7413DD5CA35BF2F9ED002,
 				2D37827EB97D1A93A3DAAA41,
 				5EC6E246E933ACF4610FE80A,
+				B0AA0C78F1011E45BC82A0D7,
 				1D798DDC8CC9072C47BA7C3C,
 				CBF2F86BC07E9F1042C0DE34,
 				A655C572231C85886A1CC900,
