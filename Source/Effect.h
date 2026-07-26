@@ -449,12 +449,22 @@ private:
                     }
 
                 }
-//                else
-//                {
-//                    float base = newBin[0].note;
-//                    for (int i = 0; i < 10; i++)
-//                        oscillators[i].setFrequency (harmonic_table[harmonics][i] * base * freqMultiplier);
-//                }
+                else
+                {
+                    const int  detectedBaseNote = juce::jlimit (0, 127, newBin[0].semitones + 21);
+                    for (int i = 0; i < 10; i++)
+                    {
+                        //oscillators[i].setFrequency (harmonic_table[harmonics][i] * base * freqMultiplier);
+                        const int   detectedNote = harmonic_table[harmonics][i] + detectedBaseNote;
+                        const float velocity     = juce::jlimit (0.05f, 1.0f, (harmonic_table_gains[harmonics][i] * newBin[0].magnitude)/ 200.0f);
+                        
+                        if(triggeredNotes.find(detectedNote) == triggeredNotes.end())
+                        {
+                            onNoteOn(detectedNote, velocity);
+                        }
+                        newTriggeredNotes.insert(detectedNote);
+                    }
+                }
           
                 
 
@@ -564,17 +574,33 @@ private:
         { 0.0,   100.0,  1.0,   1.0 },
         { 0.0,     1.0,  0.001, 0.0 },
         { -10.0,  10.0,  1.0,   0.0 },
-        { 9.0,    20.0,  1.0,   11.0 }
+        { 9.0,    20.0,  1.0,   12.0 }
     };
 
-    float harmonic_table[NUM_HARMONICS][10] = {
-        { 1.0, 2.0,        3.0,       4.0,       5.0,         6.0,       7.0, 8.0, 9.0, 10.0 },
-        { 1.0, 5.0/4.0,   3.0/2.0,  15.0/8.0,  (9.0/8.0)*2, 4.0/3.0,   7.0, 8.0, 9.0, 10.0 },
-        { 1.0, 6.0/5.0,   3.0/2.0,   9.0/5.0,  (9.0/8.0)*2, 4.0/3.0,   7.0, 8.0, 9.0, 10.0 },
-        { 1.0, 5.0/4.0,   3.0/2.0,   9.0/5.0,  (9.0/8.0)*2, 4.0/3.0,   7.0, 8.0, 9.0, 10.0 },
-        { 1.0, 2.0,       3.0/2.0,   4.0/3.0,   5.0/4.0,    6.0/5.0,  7.0/6.0, 8.0/7.0, 1.0, 1.0 },
-        { 1.0, 2.0,       3.0/2.0,   4.0/3.0,   5.0/4.0,    6.0/5.0,  7.0/6.0, 8.0/7.0, 1.0, 1.0 },
+//    float midi_harmonic_table[NUM_HARMONICS][10] = {
+//        { 1.0, 2.0,        3.0,       4.0,       5.0,         6.0,       7.0, 8.0, 9.0, 10.0 },
+//        { 1.0, 5.0/4.0,   3.0/2.0,  15.0/8.0,  (9.0/8.0)*2, 4.0/3.0,   7.0, 8.0, 9.0, 10.0 },
+//        { 1.0, 6.0/5.0,   3.0/2.0,   9.0/5.0,  (9.0/8.0)*2, 4.0/3.0,   7.0, 8.0, 9.0, 10.0 },
+//        { 1.0, 5.0/4.0,   3.0/2.0,   9.0/5.0,  (9.0/8.0)*2, 4.0/3.0,   7.0, 8.0, 9.0, 10.0 },
+//        { 1.0, 2.0,       3.0/2.0,   4.0/3.0,   5.0/4.0,    6.0/5.0,  7.0/6.0, 8.0/7.0, 1.0, 1.0 },
+//        { 1.0, 2.0,       3.0/2.0,   4.0/3.0,   5.0/4.0,    6.0/5.0,  7.0/6.0, 8.0/7.0, 1.0, 1.0 },
+//    };
+    
+    int harmonic_table[NUM_HARMONICS][10] = {
+        // base, octave, 2*octave, 3*octave, 4*octave..
+        { 0, 12, 12*2, 12*3,12*4, 12*5, 12*6, 12*7, 12*8, 12*9},
+        //Maj7 1  3  5  7   9   4  octaves
+        { 0, 4, 7, 11, 14, 5, 12*6, 12*7, 12*8, 12*9},
+        //Minor 1 b3  5  b7  9   4  octaves
+        { 0, 3, 7, 10, 14, 4, 12*6, 12*7, 12*8, 12*9},
+        //Dominant 1 3  5  b7  9   4  octaves
+        { 0, 4, 7, 10, 14, 5, 12*6, 12*7, 12*8, 12*9},
+        // Flute
+        { 0, 12, 7, 5, 4, 3,  3, 2, 0, 0},
+        // Violin
+        { 0, 12, 7, 5, 4, 3,  3, 2, 0, 0},
     };
+
 
     float harmonic_table_gains[NUM_HARMONICS][10] = {
         { 1.0, 1.0, 1.0,  1.0,  1.0,  1.0,  1.0,  1.0, 1.0, 1.0 },

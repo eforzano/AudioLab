@@ -137,6 +137,7 @@ void AudioLabAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         oscillator.process(context);
 
     effect.process(context);
+    context.getOutputBlock().clear();
     synth.process(context);
 }
 
