@@ -60,7 +60,8 @@ public:
     //==============================================================================
     // DSP components – owned by the processor, referenced by the editor.
     // These must outlive the editor.
-    EffectComponent     effect;
+    OscillatorComponent oscillator;
+    EffectComponent effect;
     SynthesizerComponent synth;
 
 private:

@@ -16,7 +16,7 @@ private:
     AudioLabAudioProcessor& audioProcessor;
 
     // Must be declared before any child components that use it
-    juce::Label synthLabel, effectLabel;
+    juce::Label oscillatorLabel, synthLabel, effectLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioLabAudioProcessorEditor)
 };

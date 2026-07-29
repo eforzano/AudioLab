@@ -77,6 +77,7 @@ void AudioLabAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     spec.maximumBlockSize = static_cast<juce::uint32> (samplesPerBlock);
     spec.numChannels      = static_cast<juce::uint32> (getTotalNumOutputChannels());
 
+    oscillator.prepare (spec);
     effect.prepare     (spec);
     synth.prepare      (spec);
 }
@@ -84,6 +85,7 @@ void AudioLabAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 void AudioLabAudioProcessor::releaseResources()
 {
     // Mirror audioDeviceStopped().
+    oscillator.reset();
     effect.reset();
     synth.reset();
 }
@@ -131,9 +133,11 @@ void AudioLabAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     juce::dsp::ProcessContextReplacing<float> context(block);
 
     // Mirror audioDeviceIOCallbackWithContext() – same order as before.
+    if (oscillator.oscEnabled)
+        oscillator.process(context);
+    
     synth.process(context);
     effect.process(context);
-
 }
 
 //==============================================================================
