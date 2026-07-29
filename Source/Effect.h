@@ -137,9 +137,12 @@ public:
     void reset() {  }
 
     //==========================================================================
-
-    float volume         = 0.5f;
-    float mix          = 0.5f;
+    float volume = 0.5f;
+    float mix = 0.5f;
+    float ctrl1 = 0.5f;
+    float ctrl2 = 0.5f;
+    float ctrl3 = 0.5f;
+    float ctrl4 = 0.5f;
     DryWetMixer<float> dryWetMixer;
     Gain<float>        gain;
     HeapBlock<char>   inputBufferMemory, outputBufferMemory;
@@ -167,8 +170,12 @@ private:
         for (int i = 0; i < NUM_ROTARY_KNOBS; i++)
             v[i] = (float) rotarySliders[i].getValue();
 
-        volume   = v[0];
-        mix      = v[3];
+        volume = v[0];
+        ctrl1  = v[1];
+        ctrl2  = v[2];
+        mix    = v[3];
+        ctrl3  = v[4];
+        ctrl4  = v[5];
         dryWetMixer.setWetMixProportion (mix);
     }
 
@@ -181,12 +188,12 @@ private:
     }
 
    float default_values[NUM_ROTARY_KNOBS][4] = {
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 }
+        { 0.0,    10.0,  0.001, volume },
+        { 0.0,    1.0,  0.001, ctrl1 },
+        { 0.0,    1.0,  0.001, ctrl2 },
+        { 0.0,    1.0,  0.001, mix },
+        { 0.0,    1.0,  0.001, ctrl3 },
+        { 0.0,    1.0,  0.001, ctrl4 }
     };
     float sampleRate = 44100.0f;
 
@@ -194,8 +201,7 @@ private:
     std::array<Slider,       NUM_ROTARY_KNOBS> rotarySliders;
     std::array<juce::Label,  NUM_ROTARY_KNOBS> rotarySliderLabels;
     std::array<juce::String, NUM_ROTARY_KNOBS> rotarySliderStrings = {
-        "Gain", "CTRL1", "CTRL2",
-        "Dry/Wet", "CTRL4", "CTRL5"
+        "Gain", "CTRL1", "CTRL2", "Dry/Wet", "CTRL4", "CTRL5"
     };
     float values[NUM_ROTARY_KNOBS] {};
 

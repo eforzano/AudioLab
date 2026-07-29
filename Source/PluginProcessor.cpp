@@ -38,6 +38,17 @@ AudioLabAudioProcessor::AudioLabAudioProcessor()
                         )
 #endif
 {
+    // When the Effect's pitch-tracker locks onto / releases a note, drive
+    // the synth's ADSR voices with it.
+//    effect.onNoteOn  = [this] (int midiNoteNumber, float velocity)
+//    {
+//        synth.triggerNoteOn (midiNoteNumber, velocity);
+//    };
+//
+//    effect.onNoteOff = [this] (int midiNoteNumber)
+//    {
+//        synth.triggerNoteOff (midiNoteNumber);
+//    };
 }
 
 AudioLabAudioProcessor::~AudioLabAudioProcessor()
@@ -46,7 +57,7 @@ AudioLabAudioProcessor::~AudioLabAudioProcessor()
 
 //==============================================================================
 const juce::String AudioLabAudioProcessor::getName() const  { return JucePlugin_Name; }
-bool AudioLabAudioProcessor::acceptsMidi()  const           { return false; }
+bool AudioLabAudioProcessor::acceptsMidi()  const           { return true; }
 bool AudioLabAudioProcessor::producesMidi() const           { return false; }
 bool AudioLabAudioProcessor::isMidiEffect() const           { return false; }
 double AudioLabAudioProcessor::getTailLengthSeconds() const { return 0.0; }
@@ -66,15 +77,15 @@ void AudioLabAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     spec.maximumBlockSize = static_cast<juce::uint32> (samplesPerBlock);
     spec.numChannels      = static_cast<juce::uint32> (getTotalNumOutputChannels());
 
-    oscillator.prepare (spec);
     effect.prepare     (spec);
+    synth.prepare      (spec);
 }
 
 void AudioLabAudioProcessor::releaseResources()
 {
     // Mirror audioDeviceStopped().
-    oscillator.reset();
     effect.reset();
+    synth.reset();
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -100,7 +111,7 @@ bool AudioLabAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 
 //==============================================================================
 void AudioLabAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
-                                           juce::MidiBuffer& /*midiMessages*/)
+                                           juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
 
@@ -110,15 +121,19 @@ void AudioLabAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (int i = totalIn; i < totalOut; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    // Let host-supplied MIDI (a DAW piano roll, a connected keyboard
+    // controller, etc.) drive the synth alongside the effect's own
+    // pitch-triggered notes and the on-screen keyboard.
+    synth.pushIncomingMidi (midiMessages);
+
     // Wrap the AudioBuffer in the DSP block / context that our components expect.
-    juce::dsp::AudioBlock<float>          block  (buffer);
-    juce::dsp::ProcessContextReplacing<float> context (block);
+    juce::dsp::AudioBlock<float> block(buffer);
+    juce::dsp::ProcessContextReplacing<float> context(block);
 
     // Mirror audioDeviceIOCallbackWithContext() – same order as before.
-    if (oscillator.oscEnabled)
-        oscillator.process (context);
+    synth.process(context);
+    effect.process(context);
 
-    effect.process (context);
 }
 
 //==============================================================================

@@ -1,17 +1,8 @@
 /*
   ==============================================================================
     AudioLab Plugin Editor
-    Converted from standalone GUI application to AudioProcessorEditor.
 
-    Layout
-    ------
-    ┌─────────────────────────────────────────────────────┐
-    │  Oscillator (label + OscillatorComponent)           │  ~30 % height
-    ├─────────────────────────────────────────────────────┤
-    │  Effect     (label + EffectComponent)               │  ~70 % height
-    └─────────────────────────────────────────────────────┘
-
-    Both components are owned by the processor and are merely *added* to the
+    Components are owned by the processor and are merely *added* to the
     editor as children here.  They will be *removed* in the destructor so that
     they don't try to paint after the editor is deleted.
   ==============================================================================
@@ -25,27 +16,32 @@ AudioLabAudioProcessorEditor::AudioLabAudioProcessorEditor (AudioLabAudioProcess
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
     // --- Labels ---
-    oscillatorLabel.setJustificationType (juce::Justification::centredLeft);
-    oscillatorLabel.setFont (juce::FontOptions (14.0f, juce::Font::bold));
-    addAndMakeVisible (oscillatorLabel);
+    synthLabel.setText ("Synth", juce::dontSendNotification);
+    synthLabel.setJustificationType (juce::Justification::centredLeft);
+    synthLabel.setFont (juce::FontOptions (14.0f, juce::Font::bold));
+    addAndMakeVisible (synthLabel);
 
+
+    effectLabel.setText ("Effect", juce::dontSendNotification);
     effectLabel.setJustificationType (juce::Justification::centredLeft);
     effectLabel.setFont (juce::FontOptions (14.0f, juce::Font::bold));
     addAndMakeVisible (effectLabel);
 
+
     // --- DSP UI components (owned by the processor) ---
-    addAndMakeVisible (audioProcessor.oscillator);
+    addAndMakeVisible (audioProcessor.synth);
     addAndMakeVisible (audioProcessor.effect);
+
 
     // A reasonable default size; the user can resize freely.
     setResizable (true, true);
-    setSize (700, 520);
+    setSize (700, 760);
 }
 
 AudioLabAudioProcessorEditor::~AudioLabAudioProcessorEditor()
 {
     // Remove the processor-owned components so they don't paint after we die.
-    removeChildComponent (&audioProcessor.oscillator);
+    removeChildComponent (&audioProcessor.synth);
     removeChildComponent (&audioProcessor.effect);
 }
 
@@ -54,41 +50,24 @@ void AudioLabAudioProcessorEditor::paint (juce::Graphics& g)
 {
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
-    // Dividing line between Oscillator and Effect panels
-    auto bounds = getLocalBounds();
-    const int oscHeight = bounds.getHeight() / 3;
-//
-//    // 2. Create the gradient object (color1, x1, y1, color2, x2, y2, isRadial)
-//    juce::ColourGradient gradient (juce::Colours::black,  bounds.getX(), bounds.getY(),         // Start top-left
-//                                   juce::Colours::cyan, bounds.getX(), bounds.getBottom(),   // End bottom-left
-//                                   true);                                                   // false = linear
-//
-//    // 3. Set the active fill to your gradient
-//    g.setGradientFill (gradient);
-//
-//    // 4. Fill your desired shape (rectangle, path, text, etc.)
-//    g.fillRect (bounds);
+    auto bounds = getLocalBounds().reduced (4);
+    const int synthHeight = (bounds.getHeight() * 9) / 20; // ~45% for synth
+
     g.setColour (juce::Colours::grey);
-    g.drawHorizontalLine (oscHeight + 20, 0.0f, static_cast<float> (bounds.getWidth()));
+    g.drawHorizontalLine (bounds.getY() + synthHeight + 4, 0.0f, static_cast<float> (getWidth()));
 }
 
 void AudioLabAudioProcessorEditor::resized()
 {
     auto bounds = getLocalBounds().reduced (4);
+    const int labelH = 20;
 
-    // ---- Oscillator panel (top third) ----
-    const int labelH  = 20;
-    const int oscH    = bounds.getHeight() / 3;
+    auto synthArea = bounds.removeFromTop ((bounds.getHeight() * 9) / 20); // ~45%
+    synthLabel.setBounds (synthArea.removeFromTop (labelH));
+    audioProcessor.synth.setBounds (synthArea);
 
-    auto oscArea = bounds.removeFromTop (oscH);
-    oscillatorLabel.setBounds (oscArea.removeFromTop (labelH));
-    audioProcessor.oscillator.setBounds (oscArea);
-
-    // ---- Gap / divider ----
     bounds.removeFromTop (8);
 
-    // ---- Effect panel (remaining space) ----
-    auto fxArea = bounds;
-    effectLabel.setBounds (fxArea.removeFromTop (labelH));
-    audioProcessor.effect.setBounds (fxArea);
+    effectLabel.setBounds (bounds.removeFromTop (labelH));
+    audioProcessor.effect.setBounds (bounds);
 }

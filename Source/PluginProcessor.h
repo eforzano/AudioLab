@@ -14,6 +14,7 @@
 #include <JuceHeader.h>
 #include "Oscillator.h"
 #include "Effect.h"
+#include "Synthesizer.h"
 
 //==============================================================================
 class AudioLabAudioProcessor : public juce::AudioProcessor
@@ -59,8 +60,8 @@ public:
     //==============================================================================
     // DSP components – owned by the processor, referenced by the editor.
     // These must outlive the editor.
-    OscillatorComponent oscillator;
     EffectComponent     effect;
+    SynthesizerComponent synth;
 
 private:
     //==============================================================================
