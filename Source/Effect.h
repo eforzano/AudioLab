@@ -14,6 +14,7 @@ using namespace juce::dsp;
 using namespace std;
 
 #define NUM_ROTARY_KNOBS 6
+#define NUM_BUFF_SAMPLES  44100
 
 //==============================================================================
 class EffectComponent final : public Component,
@@ -42,7 +43,7 @@ public:
                          default_values[i][0], default_values[i][1],
                          default_values[i][2], default_values[i][3]);
 
-        startTimerHz (30);
+        startTimerHz (60);
     }
 
     ~EffectComponent() { stopTimer(); }
@@ -102,7 +103,115 @@ public:
 
     float effect(float input)
     {
-        return input * volume;
+        /*
+        const uint32_t maxBitnessValue = 0x7F;//0x7FFF;
+
+        //crushiness = powf(crushiness, 2);
+
+        float theBitness = ctrl1 * maxBitnessValue;
+        int32_t truncatedSamp = input * theBitness;
+        float crushedSamp = (float)truncatedSamp / theBitness;
+        
+        return crushedSamp * volume;
+        */
+
+        /*
+        //For initializing buffer on first call
+        static bool firstRun = 1;
+        //For checking if knob has been turned enough to trigger settings change
+        static float prevKnobSetting = 0;
+        //Buffer indexer
+        static uint32_t readIndex = 0;
+        //Index in the buffer where read/write starts
+        static const uint32_t startIndex = 0;
+        //Index in buffer where last read/write occurs and loops back to startIndex.
+        static uint32_t stopIndex = NUM_BUFF_SAMPLES - 1;
+        */
+
+        float delayKnob = ctrl1;
+        float depthKnob = ctrl2;
+        float levelKnob = ctrl3;
+
+        //Check if knob adjustment hits threshold
+        if ((abs(delayKnob - prevKnobSetting) >= 0.002) || firstRun)
+        {
+            //First call buffer setup
+            if (firstRun)
+            {
+                //Reset buffer
+                memset(delayBuffer, 0, NUM_BUFF_SAMPLES * sizeof(float));
+                firstRun = 0;
+            }
+
+            //Set stop index to x number of samples ahead of start index based on knob setpoint
+            //Subtract 1 from total number of buffer samples to ensure stop does not equal start at both delayknob = 0 and = 1.
+            uint32_t prevStopIndex = stopIndex;
+            stopIndex = (uint32_t)(delayKnob * (NUM_BUFF_SAMPLES - 1));
+            DBG("Stop Index: " + juce::String(stopIndex));
+
+            //Set minimum delay buffer size to 3 samples.
+            //if(stopIndex - startIndex + 1 < 3) stopIndex = (startIndex + 2) % NUM_BUFF_SAMPLES;
+
+            /*
+            if (stopIndex > prevStopIndex)
+            {
+                float blendFactor = 1.0f / (stopIndex - prevStopIndex + 1);
+
+                for (uint32_t i = 1; i <= stopIndex - prevStopIndex; i++)
+                {
+                    delayBuffer[prevStopIndex + i] = (delayBuffer[prevStopIndex] * (1 - (blendFactor * i))) + (delayBuffer[startIndex] * (blendFactor * i));
+                }
+
+                //Alternate blend method where it divides the previous stop index sample by two (towards zero) 
+                //and blends it with the same thing using the start index sample from the opposite index direction
+                /*
+                float tempVal = delayBuffer[prevStopIndex];
+                for(uint32_t i = 1; i <= stopIndex - prevStopIndex; i++)
+                {
+                    tempVal /= 2;
+                    delayBuffer[prevStopIndex + i] = tempVal;
+                }
+
+                tempVal = delayBuffer[startIndex];
+                for(uint32_t i = stopIndex - prevStopIndex; i >= 1 ; i--)
+                {
+                    tempVal /= 2;
+                    delayBuffer[prevStopIndex + i] += tempVal;
+                }
+                */
+
+        /*
+        }
+        else
+        {
+            //Stop index may have moved to lower than read index, so constrain i back in bounds by setting it to start index.
+            if (readIndex > stopIndex) readIndex = startIndex;
+
+            float blendedSample = (delayBuffer[startIndex] + delayBuffer[stopIndex]) / 2;
+            delayBuffer[startIndex] = delayBuffer[stopIndex] = blendedSample;
+        }
+        */
+
+            //Record the knob setting for checking threshold on later loops
+            prevKnobSetting = delayKnob;
+        }
+
+        //TODO: Try 0.99f + 0.01f for the mixing equations, or find a more optimum one.
+
+        //Modulate input with sample from delay buffer
+        //The greater the level knob, the more the buffer sample is weighted for playback.  
+        //Current max weight is 0.50 and min is 0.05 for buffer.
+        //float output = (input * ((1 - levelKnob) * 0.45f + 0.50f)) + (delayBuffer[readIndex] * (levelKnob * 0.45f + 0.05f));
+        float output = ((input * 0.5f) + (delayBuffer[readIndex] * 0.5f));
+
+        //Store current input in delay buffer.  
+        //The greater the depth knob, the more previous samples are weighted in the buffer.
+        delayBuffer[readIndex] = (input * ((1 - depthKnob) * 0.90f + 0.05f)) + (delayBuffer[readIndex] * (depthKnob * 0.90f + 0.05f));
+
+        //Increment i
+        readIndex = (readIndex + 1) % (stopIndex + 1);
+
+        return output;
     }
     
     float dry_wet (float dry, float wet)
@@ -126,8 +235,8 @@ public:
 
             for (size_t i = 0; i < numSamples; ++i)
             {
-                const float drySample = in[i];
-                const float wetSample = effect (drySample);
+                float drySample = in[i];
+                float wetSample = effect (drySample);
 
                 out[i] = dry_wet (drySample, wetSample);
             }
@@ -140,6 +249,10 @@ public:
 
     float volume         = 0.5f;
     float mix          = 0.5f;
+    float ctrl1 = 0.5f;
+    float ctrl2 = 0.5f;
+    float ctrl3 = 0.5f;
+    float ctrl4 = 0.5f;
     DryWetMixer<float> dryWetMixer;
     Gain<float>        gain;
     HeapBlock<char>   inputBufferMemory, outputBufferMemory;
@@ -163,12 +276,18 @@ private:
 
     void updateParameters()
     {
-        float v[NUM_ROTARY_KNOBS];
+        /*
+        float values[NUM_ROTARY_KNOBS];
         for (int i = 0; i < NUM_ROTARY_KNOBS; i++)
-            v[i] = (float) rotarySliders[i].getValue();
+            values[i] = (float) rotarySliders[i].getValue();
+            */
 
-        volume   = v[0];
-        mix      = v[3];
+        volume   = rotarySliders[0].getValue();
+        mix      = rotarySliders[3].getValue();
+        ctrl1 = rotarySliders[1].getValue();
+        ctrl2 = rotarySliders[2].getValue();
+        ctrl3 = rotarySliders[4].getValue();
+        ctrl4 = rotarySliders[5].getValue();
         dryWetMixer.setWetMixProportion (mix);
     }
 
@@ -181,12 +300,12 @@ private:
     }
 
    float default_values[NUM_ROTARY_KNOBS][4] = {
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 }
+        { 0.0,    1.0,  0.001, volume },
+        { 0.0,    1.0,  0.001, ctrl1 },
+        { 0.0,    1.0,  0.001, ctrl2 },
+        { 0.0,    1.0,  0.001, mix },
+        { 0.0,    1.0,  0.001, ctrl3 },
+        { 0.0,    1.0,  0.001, ctrl4 }
     };
     float sampleRate = 44100.0f;
 
@@ -195,9 +314,21 @@ private:
     std::array<juce::Label,  NUM_ROTARY_KNOBS> rotarySliderLabels;
     std::array<juce::String, NUM_ROTARY_KNOBS> rotarySliderStrings = {
         "Gain", "CTRL1", "CTRL2",
-        "Dry/Wet", "CTRL4", "CTRL5"
+        "Dry/Wet", "CTRL3", "CTRL4"
     };
-    float values[NUM_ROTARY_KNOBS] {};
+    // float values[NUM_ROTARY_KNOBS]{};
+    float delayBuffer[NUM_BUFF_SAMPLES];
+
+    //For initializing buffer on first call
+    bool firstRun = 1;
+    //For checking if knob has been turned enough to trigger settings change
+    float prevKnobSetting = 0;
+    //Buffer indexer
+    uint32_t readIndex = 0;
+    //Index in the buffer where read/write starts
+    const uint32_t startIndex = 0;
+    //Index in buffer where last read/write occurs and loops back to startIndex.
+    uint32_t stopIndex = NUM_BUFF_SAMPLES - 1;
 
 
 
