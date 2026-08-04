@@ -3025,6 +3025,7 @@
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_gui_extra.cpp"/>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Source\Synthesizer.h"/>
     <ClInclude Include="..\..\Source\DSPDemos_Common.h"/>
     <ClInclude Include="..\..\Source\DemoUtilities.h"/>
     <ClInclude Include="..\..\Source\Effect.h"/>

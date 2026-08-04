@@ -13,7 +13,7 @@ using namespace juce;
 using namespace juce::dsp;
 using namespace std;
 
-#define NUM_ROTARY_KNOBS 6
+#define NUM_ROTARY_KNOBS 9
 
 //==============================================================================
 class EffectComponent final : public Component,
@@ -62,21 +62,32 @@ public:
     void resized () override
     {
         Grid grid;
-        grid.templateRows    = { Grid::TrackInfo (30_px),        // row labels
-                                 Grid::TrackInfo (Grid::Fr (1)),  // row sliders
-                                 Grid::TrackInfo (30_px),         // row labels
-                                 Grid::TrackInfo (Grid::Fr (1)),  // row sliders
-                                 Grid::TrackInfo (30_px),         // typeBox row
-                                 Grid::TrackInfo (Grid::Fr (1))}; // freq display
+        grid.templateRows    = { 
+            Grid::TrackInfo (30_px),        // row labels
+            Grid::TrackInfo (Grid::Fr (1)),  // row sliders
+            Grid::TrackInfo (30_px),         // row labels
+            Grid::TrackInfo (Grid::Fr (1)),  // row sliders
+            Grid::TrackInfo (30_px),         // row labels
+            Grid::TrackInfo (Grid::Fr (1)),  // row sliders
+
+            
+        }; // freq display
+        
         grid.templateColumns = { Grid::TrackInfo (Grid::Fr (1)),
-                                 Grid::TrackInfo (Grid::Fr (1)),
-                                 Grid::TrackInfo (Grid::Fr (1)) };
+            Grid::TrackInfo (Grid::Fr (1)),
+            Grid::TrackInfo (Grid::Fr (1)),
+        };
 
         for (int i = 0; i < 3; i++) grid.items.add (GridItem (rotarySliderLabels[i]).withMargin ({1}));
         for (int i = 0; i < 3; i++) grid.items.add (GridItem (rotarySliders[i])     .withMargin ({1}));
+        
         for (int i = 3; i < 6; i++) grid.items.add (GridItem (rotarySliderLabels[i]).withMargin ({1}));
         for (int i = 3; i < 6; i++) grid.items.add (GridItem (rotarySliders[i])     .withMargin ({1}));
+        
+        for (int i = 6; i < 9; i++) grid.items.add (GridItem (rotarySliderLabels[i]).withMargin ({1}));
+        for (int i = 6; i < 9; i++) grid.items.add (GridItem (rotarySliders[i])     .withMargin ({1}));
 
+        
         grid.performLayout (getLocalBounds());
     }
 
@@ -102,7 +113,7 @@ public:
 
     float effect(float input)
     {
-        return input * volume;
+        return input;
     }
     
     float dry_wet (float dry, float wet)
@@ -111,7 +122,6 @@ public:
     }
     
     //==========================================================================
-    // Called on the audio thread from processBlock
     void process (const ProcessContextReplacing<float>& context)
     {
         auto& inputBlock  = context.getInputBlock();
@@ -119,17 +129,20 @@ public:
         const auto numSamples  = outputBlock.getNumSamples();
         const auto numChannels = outputBlock.getNumChannels();
 
-        for (size_t ch = 0; ch < numChannels; ++ch)
+        for (size_t i = 0; i < numSamples; ++i)
         {
-            auto* in  = inputBlock .getChannelPointer (ch);
-            auto* out = outputBlock.getChannelPointer (ch);
+            const float g = gain.getGainLinear(); // or gain.getNextValue() equivalent
+            // advance smoothing once here, e.g. via a separate SmoothedValue you own,
+            // or restructure to use gain.process() over the whole block instead.
 
-            for (size_t i = 0; i < numSamples; ++i)
+            for (size_t ch = 0; ch < numChannels; ++ch)
             {
-                const float drySample = in[i];
-                const float wetSample = effect (drySample);
+                auto* in  = inputBlock .getChannelPointer (ch);
+                auto* out = outputBlock.getChannelPointer (ch);
 
-                out[i] = dry_wet (drySample, wetSample);
+                const float drySample = in[i];
+                const float wetSample = dry_wet(drySample, effect(drySample));
+                out[i] = wetSample * g * volume;
             }
         }
     }
@@ -137,9 +150,15 @@ public:
     void reset() {  }
 
     //==========================================================================
-
-    float volume         = 0.5f;
-    float mix          = 0.5f;
+    float mix = 0.5f;
+    float volume = 1.0f;
+    float gainValue = 1.0f;
+    float ctrl1 = 0.5f;
+    float ctrl2 = 0.5f;
+    float ctrl3 = 0.5f;
+    float ctrl4 = 0.5f;
+    float ctrl5 = 0.5f;
+    float ctrl6 = 0.5f;
     DryWetMixer<float> dryWetMixer;
     Gain<float>        gain;
     HeapBlock<char>   inputBufferMemory, outputBufferMemory;
@@ -167,8 +186,17 @@ private:
         for (int i = 0; i < NUM_ROTARY_KNOBS; i++)
             v[i] = (float) rotarySliders[i].getValue();
 
-        volume   = v[0];
-        mix      = v[3];
+        mix    = v[0];
+        volume = v[1];
+        gainValue = v[2];
+        ctrl1  = v[3];
+        ctrl2  = v[4];
+        ctrl3  = v[5];
+        ctrl4  = v[6];
+        ctrl5  = v[7];
+        ctrl6  = v[8];
+
+        gain.setGainLinear(gainValue);
         dryWetMixer.setWetMixProportion (mix);
     }
 
@@ -181,12 +209,16 @@ private:
     }
 
    float default_values[NUM_ROTARY_KNOBS][4] = {
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 },
-        { 0.0,    1.0,  0.001, 0.5 }
+       { 0.0,    1.0,  0.001, mix },
+        { 0.0,    1.0,  0.001, volume },
+       { 1.0,    50.0,  0.001, gainValue },
+        { 0.0,    1.0,  0.001, ctrl1 },
+        { 0.0,    1.0,  0.001, ctrl2 },
+        { 0.0,    1.0,  0.001, ctrl3 },
+        { 0.0,    1.0,  0.001, ctrl4 },
+       { 0.0,    1.0,  0.001, ctrl5 },
+       { 0.0,    1.0,  0.001, ctrl6 }
+
     };
     float sampleRate = 44100.0f;
 
@@ -194,10 +226,10 @@ private:
     std::array<Slider,       NUM_ROTARY_KNOBS> rotarySliders;
     std::array<juce::Label,  NUM_ROTARY_KNOBS> rotarySliderLabels;
     std::array<juce::String, NUM_ROTARY_KNOBS> rotarySliderStrings = {
-        "Gain", "CTRL1", "CTRL2",
-        "Dry/Wet", "CTRL4", "CTRL5"
+        "Dry/Wet", "Volume", "Gain", 
+        "CTRL1", "CTRL2", "CTRL3",
+        "CTRL4", "CTRL5", "CTRL6",
     };
-    float values[NUM_ROTARY_KNOBS] {};
 
 
 
