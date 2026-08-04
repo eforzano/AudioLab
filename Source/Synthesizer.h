@@ -187,7 +187,7 @@ public:
         enableToggle.setClickingTogglesState (true);
         addAndMakeVisible (enableToggle);
 
-        holdToggle.setToggleState (true, dontSendNotification);
+        holdToggle.setToggleState (false, dontSendNotification);
         holdToggle.setClickingTogglesState (true);
         addAndMakeVisible (holdToggle);
 
