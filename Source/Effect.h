@@ -15,6 +15,7 @@ using namespace std;
 
 #define NUM_ROTARY_KNOBS 9
 
+
 //==============================================================================
 class EffectComponent final : public Component,
                               private juce::Timer
@@ -110,11 +111,6 @@ public:
                                (juce::uint32) spec.numChannels });
 
     }
-
-    float effect(float input)
-    {
-        return input;
-    }
     
     float dry_wet (float dry, float wet)
     {
@@ -131,25 +127,37 @@ public:
 
         for (size_t i = 0; i < numSamples; ++i)
         {
-            const float g = gain.getGainLinear(); // or gain.getNextValue() equivalent
-            // advance smoothing once here, e.g. via a separate SmoothedValue you own,
-            // or restructure to use gain.process() over the whole block instead.
+
+            const float g = gain.getGainLinear(); 
 
             for (size_t ch = 0; ch < numChannels; ++ch)
             {
-                auto* in  = inputBlock .getChannelPointer (ch);
+                auto* in  = inputBlock.getChannelPointer (ch);
                 auto* out = outputBlock.getChannelPointer (ch);
 
-                const float drySample = in[i];
-                const float wetSample = dry_wet(drySample, effect(drySample));
-                out[i] = wetSample * g * volume;
+                float dry = in[i];
+                float wet = effects[ch].process(dry);
+                out[i] = dry_wet(dry, wet) * g * volume;
             }
         }
     }
-
+    
     void reset() {  }
+    
+    class Effect
+    {
+    public:
+        float process (float input)
+        {
+            return input;
+        }
+
+    private:
+    };
 
     //==========================================================================
+    std::array<Effect, 2> effects;
+    float prevSample = 0.0f;
     float mix = 0.5f;
     float volume = 1.0f;
     float gainValue = 1.0f;
@@ -236,3 +244,5 @@ private:
     //==========================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EffectComponent)
 };
+
+
