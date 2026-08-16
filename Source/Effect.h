@@ -8,6 +8,7 @@
 #include <vector>
 #include <array>
 #include <atomic>
+#include <stdint.h>
 
 using namespace juce;
 using namespace juce::dsp;
@@ -136,8 +137,18 @@ public:
                 auto* out = outputBlock.getChannelPointer (ch);
 
                 float dry = in[i];
-                float wet = effects[ch].process(dry);
-                out[i] = dry_wet(dry, wet) * g * volume;
+                if (effects[ch].m >= effects[ch].resample_ratio)
+                {
+                    float wet = effects[ch].process(dry);
+                    effects[ch].m = 0;
+                    out[i] = dry_wet(dry, wet) * g * volume;
+                    
+                }
+
+                else
+                {
+                    effects[ch].m++;
+                }
             }
         }
     }
@@ -149,20 +160,36 @@ public:
     public:
         float process (float input)
         {
-            return input;
+            uint32_t numBits = powf(2, bit_depth-1); //-1;
+            uint32_t interLeaved = (0xAAAAAAAA >> (uint32_t)crush_rate);
+            return (float)(ceil(input * (numBits)) / numBits);
         }
-
+        
+    float bit_depth = 8.0f;
+    float crush_rate = 1.0f;
+    float resample_rate = 20500;
+    uint16_t resample_ratio = 0;
+    uint8_t m = 0;
     private:
+
     };
 
     //==========================================================================
+    float sampleRate = 44100.0f;
+
+
+    
     std::array<Effect, 2> effects;
     float prevSample = 0.0f;
     float mix = 0.5f;
     float volume = 1.0f;
     float gainValue = 1.0f;
-    float ctrl1 = 0.5f;
-    float ctrl2 = 0.5f;
+    
+
+    float bit_depth = 8.0f;
+    float crush_rate = 31.0f;
+    float resample_rate = 44100;
+    
     float ctrl3 = 0.5f;
     float ctrl4 = 0.5f;
     float ctrl5 = 0.5f;
@@ -197,13 +224,23 @@ private:
         mix    = v[0];
         volume = v[1];
         gainValue = v[2];
-        ctrl1  = v[3];
-        ctrl2  = v[4];
-        ctrl3  = v[5];
+        resample_rate  = v[3];
+        bit_depth  = v[4];
+        crush_rate  = v[5];
         ctrl4  = v[6];
         ctrl5  = v[7];
         ctrl6  = v[8];
+        
+        for (int i = 0; i < 2; i++)
+        {
+            effects[i].resample_rate = v[3];
+            effects[i].bit_depth = v[4];
+            effects[i].crush_rate = v[5];
+            effects[i].resample_ratio =  std::round(sampleRate/effects[i].resample_rate);
+        }
 
+
+        
         gain.setGainLinear(gainValue);
         dryWetMixer.setWetMixProportion (mix);
     }
@@ -218,24 +255,22 @@ private:
 
    float default_values[NUM_ROTARY_KNOBS][4] = {
        { 0.0,    1.0,  0.001, mix },
-        { 0.0,    1.0,  0.001, volume },
-       { 1.0,    50.0,  0.001, gainValue },
-        { 0.0,    1.0,  0.001, ctrl1 },
-        { 0.0,    1.0,  0.001, ctrl2 },
-        { 0.0,    1.0,  0.001, ctrl3 },
-        { 0.0,    1.0,  0.001, ctrl4 },
+       { 0.0,    1.0,  0.001, volume },
+       { 1.0,    50.0, 0.001, gainValue },
+       { 1.0,    44100,  1.00, resample_rate },
+       { 1.0,    64.0,  1.0, bit_depth },
+       { 1.0,    64,  10.0, crush_rate },
+       { 0.0,    1.0,  0.001, ctrl4 },
        { 0.0,    1.0,  0.001, ctrl5 },
        { 0.0,    1.0,  0.001, ctrl6 }
 
     };
-    float sampleRate = 44100.0f;
-
     // UI elements
     std::array<Slider,       NUM_ROTARY_KNOBS> rotarySliders;
     std::array<juce::Label,  NUM_ROTARY_KNOBS> rotarySliderLabels;
     std::array<juce::String, NUM_ROTARY_KNOBS> rotarySliderStrings = {
         "Dry/Wet", "Volume", "Gain", 
-        "CTRL1", "CTRL2", "CTRL3",
+        "Resample", "BitDepth", "Crush",
         "CTRL4", "CTRL5", "CTRL6",
     };
 
